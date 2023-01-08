@@ -12,7 +12,7 @@ import mcvmcomputers.client.ClientMod;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Language;
 
 public class GuiFocus extends Screen{
@@ -22,7 +22,7 @@ public class GuiFocus extends Screen{
 	private MinecraftClient minecraft = MinecraftClient.getInstance();
 	
 	public GuiFocus() {
-		super(Text.translatable("Focus"));
+		super(new TranslatableText("Focus"));
 	}
 	
 	@Override
@@ -95,7 +95,7 @@ public class GuiFocus extends Screen{
 		}
 		
 		if(pressed) {
-			minecraft.setScreen(null);
+			minecraft.openScreen(null);
 		}
 		
 		super.render(ms, wmouseX, wmouseY, delta);
@@ -110,9 +110,9 @@ public class GuiFocus extends Screen{
 	public boolean shouldCloseOnEsc() {
 		return false;
 	}
-
+	
 	@Override
-	public boolean shouldPause() {
+	public boolean isPauseScreen() {
 		return false;
 	}
 }

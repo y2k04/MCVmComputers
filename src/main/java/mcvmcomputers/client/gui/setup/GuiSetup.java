@@ -5,8 +5,6 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.client.gui.Drawable;
-import net.minecraft.client.gui.Selectable;
 import org.apache.commons.lang3.SystemUtils;
 
 import com.google.gson.Gson;
@@ -25,10 +23,8 @@ import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
+import net.minecraft.text.LiteralText;
 import net.minecraft.util.Language;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnList;
 
 public class GuiSetup extends Screen{
 	private List<SetupPage> setupPages;
@@ -40,16 +36,25 @@ public class GuiSetup extends Screen{
 	public String virtualBoxDirectory = "";
 	private Language language = Language.getInstance();
 	private MinecraftClient minecraft = MinecraftClient.getInstance();
+	
 	public GuiSetup() {
-		super(Text.of("Setup"));
+		super(new LiteralText("Setup"));
 	}
 	
-	public <T extends Element & Drawable & Selectable> void addElement(T e) {
-		this.addDrawableChild(e);
+	public void addElement(Element e) {
+		this.children.add(e);
 	}
 	
 	public void clearElements() {
-		this.clearChildren();
+		this.children.clear();
+	}
+	
+	public void clearButtons() {
+		this.buttons.clear();
+	}
+	
+	public void addButton(ButtonWidget bw) {
+		super.addButton(bw);
 	}
 	
 	public void nextPage() {
@@ -77,6 +82,7 @@ public class GuiSetup extends Screen{
 	}
 
 	public void firstPage() {
+		this.clearButtons();
 		this.clearElements();
 		setupIndex = 0;
 		currentSetupPage = setupPages.get(0);
@@ -127,6 +133,7 @@ public class GuiSetup extends Screen{
 			currentSetupPage = setupPages.get(0);
 			initialized = true;
 		}
+		this.clearButtons();
 		this.clearElements();
 		currentSetupPage.init();
 	}

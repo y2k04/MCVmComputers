@@ -1,6 +1,13 @@
 package mcvmcomputers;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.UnmodifiableIterator;
@@ -8,7 +15,7 @@ import com.google.common.collect.UnmodifiableIterator;
 import io.netty.buffer.Unpooled;
 import mcvmcomputers.entities.EntityList;
 import mcvmcomputers.entities.EntityPC;
-import mcvmcomputers.item.ItemHardDrive;
+import mcvmcomputers.item.ItemHarddrive;
 import mcvmcomputers.item.ItemList;
 import mcvmcomputers.item.OrderableItem;
 import mcvmcomputers.sound.SoundList;
@@ -24,7 +31,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.collection.DefaultedList;
 
@@ -53,16 +60,17 @@ public class MainMod implements ModInitializer{
 			int arraySize = buf.readInt();
 			OrderableItem[] items = new OrderableItem[arraySize];
 			int price = 0;
-			for(int i = 0; i < arraySize; i++) {
+			for(int i = 0;i<arraySize;i++) {
 				items[i] = (OrderableItem) buf.readItemStack().getItem();
 				price += items[i].getPrice();
 			}
-			int finalPrice = price;
-			server.execute(()->{
+			
+			final int pr = price;
+			server.execute(() -> {
 				TabletOrder to = new TabletOrder();
 				to.items = new ArrayList<>();
-				to.items.addAll(List.of(items));
-				to.price = finalPrice;
+				to.items.addAll(Arrays.asList(items));
+				to.price = pr;
 				to.orderUUID = player.getUuidAsString();
 				MainMod.orders.put(player.getUuid(), to);
 			});
@@ -75,13 +83,15 @@ public class MainMod implements ModInitializer{
 			
 			server.execute(() -> {
 				if(MainMod.computers.containsKey(player.getUuid())) {
-					Collection<ServerPlayerEntity> watchingPlayers = PlayerLookup.tracking(MainMod.computers.get(player.getUuid()));
+					Stream<ServerPlayerEntity> watchingPlayers = PlayerLookup.tracking(MainMod.computers.get(player.getUuid())).stream();
 					PacketByteBuf b = new PacketByteBuf(Unpooled.buffer());
 					b.writeByteArray(screen);
 					b.writeInt(compressedDataSize);
 					b.writeInt(dataSize);
 					b.writeUuid(player.getUuid());
-					watchingPlayers.forEach(p -> ServerPlayNetworking.send(p, S2C_SCREEN, b));
+					watchingPlayers.forEach((p) -> {
+						ServerPlayNetworking.send(p, S2C_SCREEN, b);
+					});
 				}
 			});
 		});
@@ -90,18 +100,25 @@ public class MainMod implements ModInitializer{
 			int pcEntityId = buf.readInt();
 			
 			server.execute(() -> {
-				Entity e = player.world.getEntityById(pcEntityId);
-				if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()))
-					MainMod.computers.put(player.getUuid(), (EntityPC) e);
+				Entity e = player.getServerWorld().getEntityById(pcEntityId);
+				if(e != null) {
+					if(e instanceof EntityPC pc) {
+						if(pc.getOwner().equals(player.getUuidAsString())) {
+							MainMod.computers.put(player.getUuid(), (EntityPC) e);
+						}
+					}
+				}
 			});
 		});
-
-		ServerPlayNetworking.registerGlobalReceiver(C2S_TURN_ON_PC, (server, player, handler, buf, responseSender) -> {
+		
+		ServerPlayNetworking.registerGlobalReceiver(C2S_TURN_OFF_PC, (server, player, handler, buf, responseSender) -> {
 			server.execute(() -> {
-				Collection<ServerPlayerEntity> watchingPlayers = PlayerLookup.tracking(MainMod.computers.get(player.getUuid()));
+				Stream<ServerPlayerEntity> watchingPlayers = PlayerLookup.tracking(MainMod.computers.get(player.getUuid())).stream();
 				PacketByteBuf b = new PacketByteBuf(Unpooled.buffer());
 				b.writeUuid(player.getUuid());
-				watchingPlayers.forEach(p -> ServerPlayNetworking.send(p, S2C_STOP_SCREEN, b));
+				watchingPlayers.forEach((p) -> {
+					ServerPlayNetworking.send(player, S2C_STOP_SCREEN, b);
+				});
 				MainMod.computers.remove(player.getUuid());
 			});
 		});
@@ -110,13 +127,14 @@ public class MainMod implements ModInitializer{
 			String newHddName = buf.readString(32767);
 			
 			server.execute(() -> {
-				for(ItemStack is : player.getHandItems()) {
-					if(is != null)
-						if(is.getItem() instanceof ItemHardDrive) {
-							NbtCompound nc = is.getOrCreateNbt();
+				for(ItemStack is : player.getItemsHand()) {
+					if(is != null) {
+						if(is.getItem() instanceof ItemHarddrive) {
+							NbtCompound nc = is.getOrCreateTag();
 							nc.putString("vhdfile", newHddName);
 							break;
 						}
+					}
 				}
 			});
 		});
@@ -126,21 +144,24 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				Item lookingFor;
-				if (x64)
-					lookingFor = ItemList.ITEM_MOTHERBOARD64;
-				else
-					lookingFor = ItemList.ITEM_MOTHERBOARD;
-
+				Item lookingFor = null;
+				if(x64) {lookingFor = ItemList.ITEM_MOTHERBOARD64;} else {lookingFor = ItemList.ITEM_MOTHERBOARD;}
 				if(player.getInventory().contains(new ItemStack(lookingFor))) {
-					Entity e = player.world.getEntityById(entityId);
-					if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()) && !pc.getMotherboardInstalled()) {
-						removeStick(player.getInventory(), new ItemStack(lookingFor));
-						pc.setMotherboardInstalled(true);
-						pc.set64Bit(x64);
+					Entity e = player.getServerWorld().getEntityById(entityId);
+					if(e != null) {
+						if (e instanceof EntityPC pc) {
+							if(pc.getOwner().equals(player.getUuidAsString())) {
+								if(!pc.getMotherboardInstalled()) {
+									removeStick(player.getInventory(), new ItemStack(lookingFor));
+									pc.setMotherboardInstalled(true);
+									pc.set64Bit(x64);
+								}
+							}
+						}
 					}
-				} else
-					player.sendMessage(Text.translatable("mcvmcomputers.motherboard_not_present").formatted(Formatting.RED), false);
+				}else {
+					player.sendMessage(new TranslatableText("mcvmcomputers.motherboard_not_present").formatted(Formatting.RED), false);
+				}
 			});
 		});
 		
@@ -150,13 +171,20 @@ public class MainMod implements ModInitializer{
 			server.execute(() -> {
 				Item lookingFor = ItemList.ITEM_GPU;
 				if(player.getInventory().contains(new ItemStack(lookingFor))) {
-					Entity e = player.world.getEntityById(entityId);
-					if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()) && !pc.getGpuInstalled()) {
-						removeStick(player.getInventory(), new ItemStack(lookingFor));
-						pc.setGpuInstalled(true);
+					Entity e = player.getServerWorld().getEntityById(entityId);
+					if(e != null) {
+						if (e instanceof EntityPC pc) {
+							if(pc.getOwner().equals(player.getUuidAsString())) {
+								if(!pc.getGpuInstalled()) {
+									removeStick(player.getInventory(), new ItemStack(lookingFor));
+									pc.setGpuInstalled(true);
+								}
+							}
+						}
 					}
-				} else
-					player.sendMessage(Text.translatable("mcvmcomputers.gpu_not_present").formatted(Formatting.RED), false);
+				}else {
+					player.sendMessage(new TranslatableText("mcvmcomputers.gpu_not_present").formatted(Formatting.RED), false);
+				}
 			});
 		});
 		
@@ -165,21 +193,23 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				Item lookingFor = switch (dividedBy) {
-					case 2 -> ItemList.ITEM_CPU2;
-					case 4 -> ItemList.ITEM_CPU4;
-					case 6 -> ItemList.ITEM_CPU6;
-					default -> null;
-				};
-
+				Item lookingFor = null;
+				if(dividedBy == 2) {lookingFor = ItemList.ITEM_CPU2;} else if(dividedBy == 4) {lookingFor = ItemList.ITEM_CPU4;} else if(dividedBy == 6) {lookingFor = ItemList.ITEM_CPU6;}
 				if(player.getInventory().contains(new ItemStack(lookingFor))) {
-					Entity e = player.world.getEntityById(entityId);
-					if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()) && pc.getCpuDividedBy() == 0) {
-						removeStick(player.getInventory(), new ItemStack(lookingFor));
-						pc.setCpuDividedBy(dividedBy);
+					Entity e = player.getServerWorld().getEntityById(entityId);
+					if(e != null) {
+						if (e instanceof EntityPC pc) {
+							if(pc.getOwner().equals(player.getUuidAsString())) {
+								if(pc.getCpuDividedBy() == 0) {
+									removeStick(player.getInventory(), new ItemStack(lookingFor));
+									pc.setCpuDividedBy(dividedBy);
+								}
+							}
+						}
 					}
-				} else
-					player.sendMessage(Text.translatable("mcvmcomputers.cpu_not_present").formatted(Formatting.RED), false);
+				}else {
+					player.sendMessage(new TranslatableText("mcvmcomputers.cpu_not_present").formatted(Formatting.RED), false);
+				}
 			});
 		});
 		
@@ -188,19 +218,10 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				Item lookingFor = switch (mb) {
-					case 64 -> ItemList.ITEM_RAM64M;
-					case 128 -> ItemList.ITEM_RAM128M;
-					case 256 -> ItemList.ITEM_RAM256M;
-					case 512 -> ItemList.ITEM_RAM512M;
-					case 1024 -> ItemList.ITEM_RAM1G;
-					case 2048 -> ItemList.ITEM_RAM2G;
-					case 4096 -> ItemList.ITEM_RAM4G;
-					default -> null;
-				};
-
+				Item lookingFor = null;
+				if(mb == 64) {lookingFor = ItemList.ITEM_RAM64M;} else if(mb == 128) {lookingFor = ItemList.ITEM_RAM128M;} else if(mb == 256) {lookingFor = ItemList.ITEM_RAM256M;} else if(mb == 512) {lookingFor = ItemList.ITEM_RAM512M;} else if(mb == 1024) {lookingFor = ItemList.ITEM_RAM1G;} else if(mb == 2048) {lookingFor = ItemList.ITEM_RAM2G;} else if(mb == 4096) {lookingFor = ItemList.ITEM_RAM4G;}
 				if(player.getInventory().contains(new ItemStack(lookingFor))) {
-					Entity e = player.world.getEntityById(entityId);
+					Entity e = player.getServerWorld().getEntityById(entityId);
 					if(e != null) {
 						if (e instanceof EntityPC pc) {
 							if(pc.getOwner().equals(player.getUuidAsString())) {
@@ -214,8 +235,9 @@ public class MainMod implements ModInitializer{
 							}
 						}
 					}
-				} else
-					player.sendMessage(Text.translatable("mcvmcomputers.cpu_not_present").formatted(Formatting.RED), false);
+				}else {
+					player.sendMessage(new TranslatableText("mcvmcomputers.cpu_not_present").formatted(Formatting.RED), false);
+				}
 			});
 		});
 		
@@ -224,15 +246,22 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				ItemStack lookingFor = ItemHardDrive.createHardDrive(vhdName);
+				ItemStack lookingFor = ItemHarddrive.createHardDrive(vhdName);
 				if(player.getInventory().contains(lookingFor)) {
-					Entity e = player.world.getEntityById(entityId);
-					if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()) && pc.getHardDriveFileName().isEmpty()) {
-						removeStick(player.getInventory(), lookingFor);
-						pc.setHardDriveFileName(vhdName);
+					Entity e = player.getServerWorld().getEntityById(entityId);
+					if(e != null) {
+						if (e instanceof EntityPC pc) {
+							if(pc.getOwner().equals(player.getUuidAsString())) {
+								if(pc.getHardDriveFileName().isEmpty()) {
+									removeStick(player.getInventory(), lookingFor);
+									pc.setHardDriveFileName(vhdName);
+								}
+							}
+						}
 					}
-				} else
-					player.sendMessage(Text.translatable("mcvmcomputers.cpu_not_present").formatted(Formatting.RED), false);
+				}else {
+					player.sendMessage(new TranslatableText("mcvmcomputers.cpu_not_present").formatted(Formatting.RED), false);
+				}
 			});
 		});
 		
@@ -240,19 +269,25 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				Entity e = player.world.getEntityById(entityId);
-				if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()) && pc.getMotherboardInstalled()) {
-					pc.setMotherboardInstalled(false);
-					if(pc.get64Bit())
-						pc.world.spawnEntity(new ItemEntity(pc.world, pc.getX(), pc.getY(), pc.getZ(), new ItemStack(ItemList.ITEM_MOTHERBOARD64)));
-					else
-						pc.world.spawnEntity(new ItemEntity(pc.world, pc.getX(), pc.getY(), pc.getZ(), new ItemStack(ItemList.ITEM_MOTHERBOARD)));
-
-					removeCpu(pc);
-					removeGpu(pc);
-					removeHdd(pc, player.getUuidAsString());
-					removeRam(pc, 0);
-					removeRam(pc, 1);
+				Entity e = player.getServerWorld().getEntityById(entityId);
+				if(e != null) {
+					if (e instanceof EntityPC pc) {
+						if(pc.getOwner().equals(player.getUuidAsString())) {
+							if(pc.getMotherboardInstalled()) {
+								pc.setMotherboardInstalled(false);
+								if(pc.get64Bit()) {
+									pc.world.spawnEntity(new ItemEntity(pc.world, pc.getX(), pc.getY(), pc.getZ(), new ItemStack(ItemList.ITEM_MOTHERBOARD64)));
+								}else {
+									pc.world.spawnEntity(new ItemEntity(pc.world, pc.getX(), pc.getY(), pc.getZ(), new ItemStack(ItemList.ITEM_MOTHERBOARD)));
+								}
+								removeCpu(pc);
+								removeGpu(pc);
+								removeHdd(pc, player.getUuidAsString());
+								removeRam(pc, 0);
+								removeRam(pc, 1);
+							}
+						}
+					}
 				}
 			});
 		});
@@ -261,9 +296,14 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				Entity e = player.world.getEntityById(entityId);
-				if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()))
-					removeGpu(pc);
+				Entity e = player.getServerWorld().getEntityById(entityId);
+				if(e != null) {
+					if (e instanceof EntityPC pc) {
+						if(pc.getOwner().equals(player.getUuidAsString())) {
+							removeGpu(pc);
+						}
+					}
+				}
 			});
 		});
 		
@@ -271,9 +311,14 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				Entity e = player.world.getEntityById(entityId);
-				if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()))
-					removeHdd(pc, player.getUuidAsString());
+				Entity e = player.getServerWorld().getEntityById(entityId);
+				if(e != null) {
+					if (e instanceof EntityPC pc) {
+						if(pc.getOwner().equals(player.getUuidAsString())) {
+							removeHdd(pc, player.getUuidAsString());
+						}
+					}
+				}
 			});
 		});
 		
@@ -281,9 +326,14 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				Entity e = player.world.getEntityById(entityId);
-				if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()))
-					removeCpu(pc);
+				Entity e = player.getServerWorld().getEntityById(entityId);
+				if(e != null) {
+					if (e instanceof EntityPC pc) {
+						if(pc.getOwner().equals(player.getUuidAsString())) {
+							removeCpu(pc);
+						}
+					}
+				}
 			});
 		});
 		
@@ -292,9 +342,14 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				Entity e = player.world.getEntityById(entityId);
-				if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()))
-					removeRam(pc, slot);
+				Entity e = player.getServerWorld().getEntityById(entityId);
+				if(e != null) {
+					if (e instanceof EntityPC pc) {
+						if(pc.getOwner().equals(player.getUuidAsString())) {
+							removeRam(pc, slot);
+						}
+					}
+				}
 			});
 		});
 		
@@ -303,9 +358,16 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				Entity e = player.world.getEntityById(entityId);
-				if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()) && pc.getIsoFileName().isEmpty())
-					pc.setIsoFileName(isoName);
+				Entity e = player.getServerWorld().getEntityById(entityId);
+				if(e != null) {
+					if (e instanceof EntityPC pc) {
+						if(pc.getOwner().equals(player.getUuidAsString())) {
+							if(pc.getIsoFileName().isEmpty()) {
+								pc.setIsoFileName(isoName);
+							}
+						}
+					}
+				}
 			});
 		});
 		
@@ -313,16 +375,24 @@ public class MainMod implements ModInitializer{
 			int entityId = buf.readInt();
 			
 			server.execute(() -> {
-				Entity e = player.world.getEntityById(entityId);
-				if(e instanceof EntityPC pc && pc.getOwner().equals(player.getUuidAsString()) && !pc.getIsoFileName().isEmpty())
-					pc.setIsoFileName("");
+				Entity e = player.getServerWorld().getEntityById(entityId);
+				if(e != null) {
+					if (e instanceof EntityPC pc) {
+						if(pc.getOwner().equals(player.getUuidAsString())) {
+							if(!pc.getIsoFileName().isEmpty()) {
+								pc.setIsoFileName("");
+							}
+						}
+					}
+				}
 			});
 		});
 	}
 	
 	private static void removeStick(PlayerInventory inv, ItemStack is) {
-		for (List<ItemStack> list : ImmutableList.of(inv.main, inv.armor, inv.offHand)) {
-			for (ItemStack itemStack : list) {
+
+		for (DefaultedList<ItemStack> itemStacks : ImmutableList.of(inv.main, inv.armor, inv.offHand)) {
+			for (ItemStack itemStack : itemStacks) {
 				if (!itemStack.isEmpty() && itemStack.isItemEqualIgnoreDamage(is)) {
 					itemStack.decrement(1);
 					return;

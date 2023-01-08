@@ -17,7 +17,7 @@ import mcvmcomputers.item.OrderableItem;
 import mcvmcomputers.networking.PacketList;
 import mcvmcomputers.utils.TabletOrder;
 import mcvmcomputers.utils.TabletOrder.OrderStatus;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
@@ -46,27 +46,36 @@ public class ServerMixin {
 	@Inject(at = @At("HEAD"), method = "tick")
 	protected void tick(CallbackInfo ci) {
 		for(TabletOrder order : MainMod.orders.values()) {
-			switch (order.currentStatus) {
-				case ORDER_CHEST_ARRIVAL_SOON, PAYMENT_CHEST_ARRIVAL_SOON -> {
-					order.tickCount += tickTime / 1000f;
-					if (order.tickCount > 5) {
-						order.currentStatus = OrderStatus.values()[order.currentStatus.ordinal() + 1];
-						order.tickCount = 0;
-					}
+			if(order.currentStatus == OrderStatus.ORDER_CHEST_ARRIVAL_SOON) {
+				order.tickCount += tickTime / 1000f;
+				if(order.tickCount > 5) {
+					order.currentStatus = OrderStatus.ORDER_CHEST_ARRIVED;
+					order.tickCount = 0;
 				}
-				case ORDER_CHEST_RECEIVED -> {
-					order.tickCount += tickTime / 1000f;
-					if (order.tickCount > 0.25) {
-						MainMod.orders.remove(UUID.fromString(order.orderUUID));
-					}
+			}else if(order.currentStatus == OrderStatus.PAYMENT_CHEST_ARRIVAL_SOON) {
+				order.tickCount += tickTime / 1000f;
+				if(order.tickCount > 5) {
+					order.currentStatus = OrderStatus.PAYMENT_CHEST_ARRIVED;
+					order.tickCount = 0;
 				}
-				case ORDER_CHEST_ARRIVED, PAYMENT_CHEST_ARRIVED -> {
-					if (!order.entitySpawned) {
-						PlayerEntity p = playerManager.getPlayer(UUID.fromString(order.orderUUID));
-						World w = p.world;
-						w.spawnEntity(new EntityDeliveryChest(w, new Vec3d(p.getX(), p.getY(), p.getZ()), p.getUuid()));
-						order.entitySpawned = true;
-					}
+			}else if(order.currentStatus == OrderStatus.ORDER_CHEST_RECEIVED) {
+				order.tickCount += tickTime / 1000f;
+				if(order.tickCount > 0.25) {
+					MainMod.orders.remove(UUID.fromString(order.orderUUID));
+				}
+			}else if(order.currentStatus == OrderStatus.ORDER_CHEST_ARRIVED) {
+				if(!order.entitySpawned) {
+					PlayerEntity p = playerManager.getPlayer(UUID.fromString(order.orderUUID));
+					World w = p.world;
+					w.spawnEntity(new EntityDeliveryChest(w, new Vec3d(p.getX(), p.getY(), p.getZ()), p.getUuid()));
+					order.entitySpawned = true;
+				}
+			}else if(order.currentStatus == OrderStatus.PAYMENT_CHEST_ARRIVED) {
+				if(!order.entitySpawned) {
+					PlayerEntity p = playerManager.getPlayer(UUID.fromString(order.orderUUID));
+					World w = p.world;
+					w.spawnEntity(new EntityDeliveryChest(w, new Vec3d(p.getX(), p.getY(), p.getZ()), p.getUuid()));
+					order.entitySpawned = true;
 				}
 			}
 			
@@ -77,7 +86,7 @@ public class ServerMixin {
 			}
 			pb.writeInt(order.price);
 			pb.writeInt(order.currentStatus.ordinal());
-			ServerPlayNetworking.send(playerManager.getPlayer(UUID.fromString(order.orderUUID)), PacketList.S2C_SYNC_ORDER, pb);
+			ServerSidePacketRegistry.INSTANCE.sendToPlayer(playerManager.getPlayer(UUID.fromString(order.orderUUID)), PacketList.S2C_SYNC_ORDER, pb);
 		}
 	}
 }

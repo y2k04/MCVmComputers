@@ -16,7 +16,10 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.render.entity.EntityRenderer;
+import net.minecraft.client.render.entity.EntityRendererFactory;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import org.apache.commons.lang3.SystemUtils;
 import org.lwjgl.glfw.GLFW;
@@ -34,7 +37,7 @@ import mcvmcomputers.client.entities.render.ItemPreviewRender;
 import mcvmcomputers.client.entities.render.KeyboardRender;
 import mcvmcomputers.client.entities.render.MouseRender;
 import mcvmcomputers.client.entities.render.PCRender;
-import mcvmcomputers.client.gui.GuiCreateHardDrive;
+import mcvmcomputers.client.gui.GuiCreateHarddrive;
 import mcvmcomputers.client.gui.GuiFocus;
 import mcvmcomputers.client.gui.GuiPCEditing;
 import mcvmcomputers.client.tablet.TabletOS;
@@ -48,12 +51,11 @@ import mcvmcomputers.utils.TabletOrder;
 import mcvmcomputers.utils.TabletOrder.OrderStatus;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.network.PacketByteBuf;
-import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 
@@ -174,20 +176,20 @@ public class ClientMod implements ClientModInitializer{
 		}
 		f.createNewFile();
 		FileWriter fw = new FileWriter(f);
-		fw.append(""+latestVHDNum);
+		fw.append(String.valueOf(latestVHDNum));
 		fw.flush();
 		fw.close();
 	}
 	
 	public static void generatePCScreen() {
-		MinecraftClient mc = MinecraftClient.getInstance();
-		if(mc.player == null) {
+		MinecraftClient mcc = MinecraftClient.getInstance();
+		if(mcc.player == null) {
 			return;
 		}
 		if(vmTextureBytes != null) {
-			if(vmScreenTextures.containsKey(mc.player.getUuid())) {
-				MinecraftClient.getInstance().getTextureManager().destroyTexture(vmScreenTextures.get(mc.player.getUuid()));
-				vmScreenTextures.remove(mc.player.getUuid());
+			if(vmScreenTextures.containsKey(mcc.player.getUuid())) {
+				MinecraftClient.getInstance().getTextureManager().destroyTexture(vmScreenTextures.get(mcc.player.getUuid()));
+				vmScreenTextures.remove(mcc.player.getUuid());
 			}
 			
 			Deflater def = new Deflater();
@@ -199,12 +201,12 @@ public class ClientMod implements ClientModInitializer{
 			
 			if(sz > 32766) {
 				if(!failedSend){
-					mc.player.sendMessage(Text.translatable("mcvmcomputers.screen_too_big_mp").formatted(Formatting.RED), false);
+					mcc.player.sendMessage(new TranslatableText("mcvmcomputers.screen_too_big_mp").formatted(Formatting.RED), false);
 					failedSend = true;
 				}
 			}else {
 				if(failedSend) {
-					mc.player.sendMessage(Text.translatable("mcvmcomputers.screen_ok_mp").formatted(Formatting.GREEN), false);
+					mcc.player.sendMessage(new TranslatableText("mcvmcomputers.screen_ok_mp").formatted(Formatting.GREEN), false);
 					failedSend = false;
 				}
 				
@@ -218,21 +220,20 @@ public class ClientMod implements ClientModInitializer{
 			NativeImage ni = null;
 			try {
 				ni = NativeImage.read(new ByteArrayInputStream(vmTextureBytes));
-			} catch (IOException e) {
-			}
+			} catch (IOException ignored) {}
 			if(ni != null) {
-				if(vmScreenTextureNI.containsKey(mc.player.getUuid())) {
-					vmScreenTextureNI.get(mc.player.getUuid()).close();
-					vmScreenTextureNI.remove(mc.player.getUuid());
+				if(vmScreenTextureNI.containsKey(mcc.player.getUuid())) {
+					vmScreenTextureNI.get(mcc.player.getUuid()).close();
+					vmScreenTextureNI.remove(mcc.player.getUuid());
 				}
-				if(vmScreenTextureNIBT.containsKey(mc.player.getUuid())) {
-					vmScreenTextureNIBT.get(mc.player.getUuid()).close();
-					vmScreenTextureNIBT.remove(mc.player.getUuid());
+				if(vmScreenTextureNIBT.containsKey(mcc.player.getUuid())) {
+					vmScreenTextureNIBT.get(mcc.player.getUuid()).close();
+					vmScreenTextureNIBT.remove(mcc.player.getUuid());
 				}
-				vmScreenTextureNI.put(mc.player.getUuid(), ni);
+				vmScreenTextureNI.put(mcc.player.getUuid(), ni);
 				NativeImageBackedTexture nibt = new NativeImageBackedTexture(ni);
-				vmScreenTextureNIBT.put(mc.player.getUuid(), nibt);
-				vmScreenTextures.put(mc.player.getUuid(), MinecraftClient.getInstance().getTextureManager().registerDynamicTexture("vm_texture", nibt));
+				vmScreenTextureNIBT.put(mcc.player.getUuid(), nibt);
+				vmScreenTextures.put(mcc.player.getUuid(), MinecraftClient.getInstance().getTextureManager().registerDynamicTexture("vm_texture", nibt));
 			}
 			vmTextureBytes = null;
 		}
@@ -243,39 +244,32 @@ public class ClientMod implements ClientModInitializer{
 			byte[] screen = buf.readByteArray();
 			int compressedDataSize = buf.readInt();
 			int dataSize = buf.readInt();
-
 			UUID pcOwner = buf.readUuid();
-			UUID clientUUID = client.player.getUuid();
-
+			
 			client.execute(() -> {
-				if (pcOwner != clientUUID) {
-					if (ClientMod.vmScreenTextures.containsKey(pcOwner)) {
-						client.getTextureManager().destroyTexture(ClientMod.vmScreenTextures.get(pcOwner));
-						vmScreenTextures.remove(clientUUID);
+				MinecraftClient mcc = MinecraftClient.getInstance();
+				if(!pcOwner.equals(mcc.player.getUuid())) {
+					if(ClientMod.vmScreenTextures.containsKey(pcOwner)) {
+						mcc.getTextureManager().destroyTexture(ClientMod.vmScreenTextures.get(pcOwner));
+						vmScreenTextures.remove(mcc.player.getUuid());
 					}
-
-					if (ClientMod.vmScreenTextureNI.containsKey(pcOwner)) {
+					if(ClientMod.vmScreenTextureNI.containsKey(pcOwner)) {
 						ClientMod.vmScreenTextureNI.get(pcOwner).close();
-						vmScreenTextureNI.remove(clientUUID);
+						vmScreenTextureNI.remove(mcc.player.getUuid());
 					}
-
-					if (ClientMod.vmScreenTextureNIBT.containsKey(pcOwner)) {
-						ClientMod.vmScreenTextureNIBT.get(pcOwner).close();
-						vmScreenTextureNIBT.remove(clientUUID);
+					if(ClientMod.vmScreenTextureNIBT.containsKey(pcOwner)) {
+						ClientMod.vmScreenTextureNI.get(pcOwner).close();
+						vmScreenTextureNIBT.remove(mcc.player.getUuid());
 					}
-
 					try {
 						Inflater inf = new Inflater();
+						inf.setInput(screen, 0, compressedDataSize);
 						byte[] actualScreen = new byte[dataSize+1];
-
-						inf.setInput(screen, 0,compressedDataSize);
 						int size = inf.inflate(actualScreen);
 						inf.end();
-
 						NativeImage ni = NativeImage.read(new ByteArrayInputStream(actualScreen, 0, size));
 						NativeImageBackedTexture nibt = new NativeImageBackedTexture(ni);
-
-						ClientMod.vmScreenTextures.put(pcOwner, client.getTextureManager().registerDynamicTexture("pc_screen_map", nibt));
+						ClientMod.vmScreenTextures.put(pcOwner, mcc.getTextureManager().registerDynamicTexture("pc_screen_mp", nibt));
 						ClientMod.vmScreenTextureNI.put(pcOwner, ni);
 						ClientMod.vmScreenTextureNIBT.put(pcOwner, nibt);
 					} catch (IOException | DataFormatException e) {
@@ -284,46 +278,44 @@ public class ClientMod implements ClientModInitializer{
 				}
 			});
 		});
-
+		
 		ClientPlayNetworking.registerGlobalReceiver(PacketList.S2C_STOP_SCREEN, (client, handler, buf, responseSender) -> {
 			UUID pcOwner = buf.readUuid();
-			UUID clientUUID = client.player.getUuid();
 			
 			client.execute(() -> {
+				MinecraftClient mcc = MinecraftClient.getInstance();
 				if(ClientMod.vmScreenTextures.containsKey(pcOwner)) {
-					client.getTextureManager().destroyTexture(ClientMod.vmScreenTextures.get(pcOwner));
-					vmScreenTextures.remove(clientUUID);
+					mcc.getTextureManager().destroyTexture(ClientMod.vmScreenTextures.get(pcOwner));
+					vmScreenTextures.remove(mcc.player.getUuid());
 				}
-
 				if(ClientMod.vmScreenTextureNI.containsKey(pcOwner)) {
 					ClientMod.vmScreenTextureNI.get(pcOwner).close();
-					vmScreenTextureNI.remove(clientUUID);
+					vmScreenTextureNI.remove(mcc.player.getUuid());
 				}
-
 				if(ClientMod.vmScreenTextureNIBT.containsKey(pcOwner)) {
 					ClientMod.vmScreenTextureNIBT.get(pcOwner).close();
-					vmScreenTextureNIBT.remove(clientUUID);
+					vmScreenTextureNIBT.remove(mcc.player.getUuid());
 				}
 			});
 		});
-
+		
 		ClientPlayNetworking.registerGlobalReceiver(PacketList.S2C_SYNC_ORDER, (client, handler, buf, responseSender) -> {
 			int arraySize = buf.readInt();
-			int price = buf.readInt();
-
 			OrderableItem[] arr = new OrderableItem[arraySize];
-			for(int i = 0; i < arraySize; i++) {
+			for(int i = 0;i<arraySize;i++) {
 				arr[i] = (OrderableItem) buf.readItemStack().getItem();
 			}
+			int price = buf.readInt();
 			OrderStatus status = OrderStatus.values()[buf.readInt()]; //send ordinal
-
+			
 			client.execute(() -> {
-				if (ClientMod.myOrder == null)
+				if(ClientMod.myOrder == null) {
 					ClientMod.myOrder = new TabletOrder();
-
+				}
 				ClientMod.myOrder.price = price;
 				ClientMod.myOrder.items = Arrays.asList(arr);
-				ClientMod.myOrder.orderUUID = client.player.getUuid().toString();
+				assert client.player != null;
+				ClientMod.myOrder.orderUUID = client.player.getUuidAsString();
 				ClientMod.myOrder.currentStatus = status;
 			});
 		});
@@ -340,24 +332,23 @@ public class ClientMod implements ClientModInitializer{
 			return render;
 		});
 	}
-
+	
 	@Override
 	public void onInitializeClient() {
-		MinecraftClient client = MinecraftClient.getInstance();
-
-		MainMod.pcOpenGui = () -> client.setScreen(new GuiPCEditing(currentPC));
-		MainMod.hardDriveClick = () -> client.setScreen(new GuiCreateHardDrive());
-		MainMod.focus = () -> client.setScreen(new GuiFocus());
+		MainMod.pcOpenGui = () -> MinecraftClient.getInstance().openScreen(new GuiPCEditing(currentPC));
+		MainMod.hardDriveClick = () -> MinecraftClient.getInstance().openScreen(new GuiCreateHarddrive());
+		MainMod.focus = () -> MinecraftClient.getInstance().openScreen(new GuiFocus());
 		MainMod.deliveryChestSound = () -> {
-			if(client.getSoundManager().isPlaying(currentDeliveryChest.rocketSound))
-				client.getSoundManager().stop(currentDeliveryChest.rocketSound);
+			if(MinecraftClient.getInstance().getSoundManager().isPlaying(currentDeliveryChest.rocketSound)) {
+				MinecraftClient.getInstance().getSoundManager().stop(currentDeliveryChest.rocketSound);
+			}
 		};
 		
 		registerClientPackets();
 		
-		vmScreenTextures = new HashMap<UUID, Identifier>();
-		vmScreenTextureNI = new HashMap<UUID, NativeImage>();
-		vmScreenTextureNIBT = new HashMap<UUID, NativeImageBackedTexture>();
+		vmScreenTextures = new HashMap<>();
+		vmScreenTextureNI = new HashMap<>();
+		vmScreenTextureNIBT = new HashMap<>();
 
 		registerEntityRenderer(EntityList.ITEM_PREVIEW, ItemPreviewRender.class);
 		registerEntityRenderer(EntityList.KEYBOARD, KeyboardRender.class);

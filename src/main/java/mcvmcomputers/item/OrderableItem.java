@@ -17,7 +17,4 @@ public class OrderableItem extends Item{
 		return price;
 	}
 
-    public boolean shouldSyncTagToClient() {
-		return !super.isNbtSynced();
-	}
 }

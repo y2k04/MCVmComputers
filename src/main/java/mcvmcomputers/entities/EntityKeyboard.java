@@ -9,23 +9,20 @@ import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.math.Quaternion;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 public class EntityKeyboard extends Entity{
-	private static final TrackedData<Float> ORIENTATION_X =
+	private static final TrackedData<Float> LOOK_AT_POS_X =
 			DataTracker.registerData(EntityKeyboard.class, TrackedDataHandlerRegistry.FLOAT);
-	private static final TrackedData<Float> ORIENTATION_Y =
+	private static final TrackedData<Float> LOOK_AT_POS_Y =
 			DataTracker.registerData(EntityKeyboard.class, TrackedDataHandlerRegistry.FLOAT);
-	private static final TrackedData<Float> ORIENTATION_Z =
-			DataTracker.registerData(EntityKeyboard.class, TrackedDataHandlerRegistry.FLOAT);
-	private static final TrackedData<Float> ORIENTATION_W =
+	private static final TrackedData<Float> LOOK_AT_POS_Z =
 			DataTracker.registerData(EntityKeyboard.class, TrackedDataHandlerRegistry.FLOAT);
 	
 	public EntityKeyboard(EntityType<?> type, World world) {
@@ -37,46 +34,37 @@ public class EntityKeyboard extends Entity{
 		this.updatePosition(x, y, z);
 	}
 	
-	public EntityKeyboard(World world, Double x, Double y, Double z, Quaternion quaternion, String uuid) {
+	public EntityKeyboard(World world, Double x, Double y, Double z, Vec3d lookAt, String uuid) {
 		this(EntityList.KEYBOARD, world);
 		this.updatePosition(x, y, z);
-		this.getDataTracker().set(ORIENTATION_X, quaternion.getX());
-		this.getDataTracker().set(ORIENTATION_Y, quaternion.getY());
-		this.getDataTracker().set(ORIENTATION_Z, quaternion.getZ());
-		this.getDataTracker().set(ORIENTATION_W, quaternion.getW());
+		this.getDataTracker().set(LOOK_AT_POS_X, (float)lookAt.x);
+		this.getDataTracker().set(LOOK_AT_POS_Y, (float)lookAt.y);
+		this.getDataTracker().set(LOOK_AT_POS_Z, (float)lookAt.z);
 	}
-
-	public Quaternion getOrientation() {
-		return new Quaternion(this.getDataTracker().get(ORIENTATION_X),
-				this.getDataTracker().get(ORIENTATION_Y),
-				this.getDataTracker().get(ORIENTATION_Z),
-				this.getDataTracker().get(ORIENTATION_W));
+	
+	public Vec3d getLookAtPos() {
+		return new Vec3d(this.getDataTracker().get(LOOK_AT_POS_X), this.getDataTracker().get(LOOK_AT_POS_Y), this.getDataTracker().get(LOOK_AT_POS_Z));
 	}
 
 	@Override
 	protected void initDataTracker() {
-		this.getDataTracker().startTracking(ORIENTATION_X, 0f);
-		this.getDataTracker().startTracking(ORIENTATION_Y, 0f);
-		this.getDataTracker().startTracking(ORIENTATION_Z, 0f);
-		this.getDataTracker().startTracking(ORIENTATION_W, 0f);
+		this.getDataTracker().startTracking(LOOK_AT_POS_X, 0f);
+		this.getDataTracker().startTracking(LOOK_AT_POS_Y, 0f);
+		this.getDataTracker().startTracking(LOOK_AT_POS_Z, 0f);
 	}
-
 	@Override
-	protected void readCustomDataFromNbt(NbtCompound nbt) {
-		this.getDataTracker().set(ORIENTATION_X, nbt.getFloat("OrientationX"));
-		this.getDataTracker().set(ORIENTATION_Y, nbt.getFloat("OrientationY"));
-		this.getDataTracker().set(ORIENTATION_Z, nbt.getFloat("OrientationZ"));
-		this.getDataTracker().set(ORIENTATION_W, nbt.getFloat("OrientationW"));
+	protected void readCustomDataFromTag(CompoundTag tag) {
+		this.getDataTracker().set(LOOK_AT_POS_X, tag.getFloat("LookAtX"));
+		this.getDataTracker().set(LOOK_AT_POS_Y, tag.getFloat("LookAtY"));
+		this.getDataTracker().set(LOOK_AT_POS_Z, tag.getFloat("LookAtZ"));
 	}
-
 	@Override
-	protected void writeCustomDataToNbt(NbtCompound nbt) {
-		nbt.putFloat("OrientationX", this.getDataTracker().get(ORIENTATION_X));
-		nbt.putFloat("OrientationY", this.getDataTracker().get(ORIENTATION_Y));
-		nbt.putFloat("OrientationZ", this.getDataTracker().get(ORIENTATION_Z));
-		nbt.putFloat("OrientationW", this.getDataTracker().get(ORIENTATION_W));
+	protected void writeCustomDataToTag(CompoundTag tag) {
+		tag.putFloat("LookAtX", this.getDataTracker().get(LOOK_AT_POS_X));
+		tag.putFloat("LookAtY", this.getDataTracker().get(LOOK_AT_POS_Y));
+		tag.putFloat("LookAtZ", this.getDataTracker().get(LOOK_AT_POS_Z));
 	}
-
+	
 	@Override
 	public ActionResult interact(PlayerEntity player, Hand hand) {
 		if(!player.world.isClient) {
@@ -89,9 +77,9 @@ public class EntityKeyboard extends Entity{
 		}
 		return ActionResult.SUCCESS;
 	}
-
+	
 	@Override
-	public boolean collidesWith(Entity other) {
+	public boolean collides() {
 		return true;
 	}
 

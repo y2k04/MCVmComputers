@@ -52,7 +52,7 @@ public class EntityItemPreview extends Entity{
 
 	@Override
 	protected void writeCustomDataToNbt(NbtCompound nbt) {
-		nbt.put("Item", this.getDataTracker().get(PREVIEWED_STACK).getOrCreateNbt());
+		nbt.put("Item", this.getDataTracker().get(PREVIEWED_STACK).getOrCreateTag());
 	}
 
 	public void setItem(ItemStack is) {

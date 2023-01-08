@@ -13,14 +13,13 @@ import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
-import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
-import net.minecraft.util.math.Quaternion;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -31,14 +30,12 @@ public class EntityPC extends Entity{
 			DataTracker.registerData(EntityPC.class, TrackedDataHandlerRegistry.STRING);
 	private static final TrackedData<String> OWNER_UUID =
 			DataTracker.registerData(EntityPC.class, TrackedDataHandlerRegistry.STRING);
-
-	private static final TrackedData<Float> ORIENTATION_X =
+	
+	private static final TrackedData<Float> LOOK_AT_POS_X =
 			DataTracker.registerData(EntityPC.class, TrackedDataHandlerRegistry.FLOAT);
-	private static final TrackedData<Float> ORIENTATION_Y =
+	private static final TrackedData<Float> LOOK_AT_POS_Y =
 			DataTracker.registerData(EntityPC.class, TrackedDataHandlerRegistry.FLOAT);
-	private static final TrackedData<Float> ORIENTATION_Z =
-			DataTracker.registerData(EntityPC.class, TrackedDataHandlerRegistry.FLOAT);
-	private static final TrackedData<Float> ORIENTATION_W =
+	private static final TrackedData<Float> LOOK_AT_POS_Z =
 			DataTracker.registerData(EntityPC.class, TrackedDataHandlerRegistry.FLOAT);
 	
 	private static final TrackedData<Integer> CPU_DIVIDED_BY =
@@ -66,45 +63,41 @@ public class EntityPC extends Entity{
 		this.updatePosition(x, y, z);
 	}
 	
-	public EntityPC(World world, Double x, Double y, Double z, Quaternion quaternion, UUID owner, NbtCompound nbt) {
+	public EntityPC(World world, double x, double y, double z, Vec3d lookAt, UUID owner, CompoundTag tag) {
 		this(EntityList.PC, world);
 		this.updatePosition(x, y, z);
-		this.getDataTracker().set(ORIENTATION_X, quaternion.getX());
-		this.getDataTracker().set(ORIENTATION_Y, quaternion.getY());
-		this.getDataTracker().set(ORIENTATION_Z, quaternion.getZ());
-		this.getDataTracker().set(ORIENTATION_W, quaternion.getW());
+		this.getDataTracker().set(LOOK_AT_POS_X, (float)lookAt.x);
+		this.getDataTracker().set(LOOK_AT_POS_Y, (float)lookAt.y);
+		this.getDataTracker().set(LOOK_AT_POS_Z, (float)lookAt.z);
 		this.getDataTracker().set(OWNER_UUID, owner.toString());
 		
-		if(nbt != null) {
-			if(nbt.contains("x64"))
-				this.getDataTracker().set(SIXTY_FOUR_BIT, nbt.getBoolean("x64"));
-			if(nbt.contains("MoboInstalled"))
-				this.getDataTracker().set(MOTHERBOARD_INSTALLED, nbt.getBoolean("MoboInstalled"));
-			if(nbt.contains("GPUInstalled"))
-				this.getDataTracker().set(GPU_IN_PCI_SLOT, nbt.getBoolean("GPUInstalled"));
-			if(nbt.contains("CPUDividedBy"))
-				this.getDataTracker().set(CPU_DIVIDED_BY, nbt.getInt("CPUDividedBy"));
-			if(nbt.contains("RAMSlot0"))
-				this.getDataTracker().set(GB_OF_RAM_IN_SLOT_0, nbt.getInt("RAMSlot0"));
-			if(nbt.contains("RAMSlot1"))
-				this.getDataTracker().set(GB_OF_RAM_IN_SLOT_1, nbt.getInt("RAMSlot1"));
-			if(nbt.contains("VHDName"))
-				this.getDataTracker().set(HARD_DRIVE_FILE_NAME, nbt.getString("VHDName"));
-			if(nbt.contains("ISOName"))
-				this.getDataTracker().set(ISO_FILE_NAME, nbt.getString("ISOName"));
+		if(tag != null) {
+			if(tag.contains("x64"))
+				this.getDataTracker().set(SIXTY_FOUR_BIT, tag.getBoolean("x64"));
+			if(tag.contains("MoboInstalled"))
+				this.getDataTracker().set(MOTHERBOARD_INSTALLED, tag.getBoolean("MoboInstalled"));
+			if(tag.contains("GPUInstalled"))
+				this.getDataTracker().set(GPU_IN_PCI_SLOT, tag.getBoolean("GPUInstalled"));
+			if(tag.contains("CPUDividedBy"))
+				this.getDataTracker().set(CPU_DIVIDED_BY, tag.getInt("CPUDividedBy"));
+			if(tag.contains("RAMSlot0"))
+				this.getDataTracker().set(GB_OF_RAM_IN_SLOT_0, tag.getInt("RAMSlot0"));
+			if(tag.contains("RAMSlot1"))
+				this.getDataTracker().set(GB_OF_RAM_IN_SLOT_1, tag.getInt("RAMSlot1"));
+			if(tag.contains("VHDName"))
+				this.getDataTracker().set(HARD_DRIVE_FILE_NAME, tag.getString("VHDName"));
+			if(tag.contains("ISOName"))
+				this.getDataTracker().set(ISO_FILE_NAME, tag.getString("ISOName"));
 		}
 	}
 	
-	public EntityPC(World world, double x, double y, double z, Quaternion quaternion, UUID owner, boolean glassSidepanel, NbtCompound nbt) {
-		this(world, x, y, z, quaternion, owner, nbt);
+	public EntityPC(World world, double x, double y, double z, Vec3d lookAt, UUID owner, boolean glassSidepanel, CompoundTag tag) {
+		this(world, x, y, z, lookAt, owner, tag);
 		this.getDataTracker().set(GLASS_SIDEPANEL, glassSidepanel);
 	}
-
-	public Quaternion getOrientation() {
-		return new Quaternion(this.getDataTracker().get(ORIENTATION_X),
-				this.getDataTracker().get(ORIENTATION_Y),
-				this.getDataTracker().get(ORIENTATION_Z),
-				this.getDataTracker().get(ORIENTATION_W));
+	
+	public Vec3d getLookAtPos() {
+		return new Vec3d(this.getDataTracker().get(LOOK_AT_POS_X), this.getDataTracker().get(LOOK_AT_POS_Y), this.getDataTracker().get(LOOK_AT_POS_Z));
 	}
 
 	@Override
@@ -112,10 +105,9 @@ public class EntityPC extends Entity{
 		this.getDataTracker().startTracking(HARD_DRIVE_FILE_NAME, "");
 		this.getDataTracker().startTracking(ISO_FILE_NAME, "");
 		this.getDataTracker().startTracking(OWNER_UUID, "");
-		this.getDataTracker().startTracking(ORIENTATION_X, 0f);
-		this.getDataTracker().startTracking(ORIENTATION_Y, 0f);
-		this.getDataTracker().startTracking(ORIENTATION_Z, 0f);
-		this.getDataTracker().startTracking(ORIENTATION_W, 0f);
+		this.getDataTracker().startTracking(LOOK_AT_POS_X, 0f);
+		this.getDataTracker().startTracking(LOOK_AT_POS_Y, 0f);
+		this.getDataTracker().startTracking(LOOK_AT_POS_Z, 0f);
 		this.getDataTracker().startTracking(GB_OF_RAM_IN_SLOT_0, 0);
 		this.getDataTracker().startTracking(GB_OF_RAM_IN_SLOT_1, 0);
 		this.getDataTracker().startTracking(CPU_DIVIDED_BY, 0);
@@ -124,71 +116,67 @@ public class EntityPC extends Entity{
 		this.getDataTracker().startTracking(GLASS_SIDEPANEL, false);
 		this.getDataTracker().startTracking(SIXTY_FOUR_BIT, false);
 	}
-
 	@Override
-	protected void readCustomDataFromNbt(NbtCompound nbt) {
-		this.getDataTracker().set(ORIENTATION_X, nbt.getFloat("OrientationX"));
-		this.getDataTracker().set(ORIENTATION_Y, nbt.getFloat("OrientationY"));
-		this.getDataTracker().set(ORIENTATION_Z, nbt.getFloat("OrientationZ"));
-		this.getDataTracker().set(ORIENTATION_W, nbt.getFloat("OrientationW"));
-
-		if(nbt.contains("Owner")){
-			this.getDataTracker().set(OWNER_UUID, nbt.getString("Owner"));
+	protected void readCustomDataFromTag(CompoundTag tag) {
+		this.getDataTracker().set(LOOK_AT_POS_X, tag.getFloat("LookAtX"));
+		this.getDataTracker().set(LOOK_AT_POS_Y, tag.getFloat("LookAtY"));
+		this.getDataTracker().set(LOOK_AT_POS_Z, tag.getFloat("LookAtZ"));
+		
+		if(tag.contains("Owner")){
+			this.getDataTracker().set(OWNER_UUID, tag.getString("Owner"));
 		}
-
-		if(nbt.contains("X64")) {
-			this.getDataTracker().set(SIXTY_FOUR_BIT, nbt.getBoolean("X64"));
+		
+		if(tag.contains("X64")) {
+			this.getDataTracker().set(SIXTY_FOUR_BIT, tag.getBoolean("X64"));
 		}
-
-		if(nbt.contains("CpuDividedBy")) {
-			this.getDataTracker().set(CPU_DIVIDED_BY, nbt.getInt("CpuDividedBy"));
+		
+		if(tag.contains("CpuDividedBy")) {
+			this.getDataTracker().set(CPU_DIVIDED_BY, tag.getInt("CpuDividedBy"));
 		}
-
-		if(nbt.contains("IsoFileName")) {
-			this.getDataTracker().set(ISO_FILE_NAME, nbt.getString("IsoFileName"));
+		
+		if(tag.contains("IsoFileName")) {
+			this.getDataTracker().set(ISO_FILE_NAME, tag.getString("IsoFileName"));
 		}
-
-		if(nbt.contains("GbRamSlot0")) {
-			this.getDataTracker().set(GB_OF_RAM_IN_SLOT_0, nbt.getInt("GbRamSlot0"));
+		
+		if(tag.contains("GbRamSlot0")) {
+			this.getDataTracker().set(GB_OF_RAM_IN_SLOT_0, tag.getInt("GbRamSlot0"));
 		}
-
-		if(nbt.contains("GbRamSlot1")) {
-			this.getDataTracker().set(GB_OF_RAM_IN_SLOT_1, nbt.getInt("GbRamSlot1"));
+		
+		if(tag.contains("GbRamSlot1")) {
+			this.getDataTracker().set(GB_OF_RAM_IN_SLOT_1, tag.getInt("GbRamSlot1"));
 		}
-
-		if(nbt.contains("GpuInstalled")) {
-			this.getDataTracker().set(GPU_IN_PCI_SLOT, nbt.getBoolean("GpuInstalled"));
+		
+		if(tag.contains("GpuInstalled")) {
+			this.getDataTracker().set(GPU_IN_PCI_SLOT, tag.getBoolean("GpuInstalled"));
 		}
-
-		if(nbt.contains("HardDriveFileName")) {
-			this.getDataTracker().set(HARD_DRIVE_FILE_NAME, nbt.getString("HardDriveFileName"));
+		
+		if(tag.contains("HardDriveFileName")) {
+			this.getDataTracker().set(HARD_DRIVE_FILE_NAME, tag.getString("HardDriveFileName"));
 		}
-
-		if(nbt.contains("MotherboardInstalled")) {
-			this.getDataTracker().set(MOTHERBOARD_INSTALLED, nbt.getBoolean("MotherboardInstalled"));
+		
+		if(tag.contains("MotherboardInstalled")) {
+			this.getDataTracker().set(MOTHERBOARD_INSTALLED, tag.getBoolean("MotherboardInstalled"));
 		}
-
-		if(nbt.contains("GlassSidepanel")) {
-			this.getDataTracker().set(GLASS_SIDEPANEL, nbt.getBoolean("GlassSidepanel"));
+		
+		if(tag.contains("GlassSidepanel")) {
+			this.getDataTracker().set(GLASS_SIDEPANEL, tag.getBoolean("GlassSidepanel"));
 		}
 	}
-
 	@Override
-	protected void writeCustomDataToNbt(NbtCompound nbt) {
-		nbt.putBoolean("X64", this.getDataTracker().get(SIXTY_FOUR_BIT));
-		nbt.putFloat("OrientationX", this.getDataTracker().get(ORIENTATION_X));
-		nbt.putFloat("OrientationY", this.getDataTracker().get(ORIENTATION_Y));
-		nbt.putFloat("OrientationZ", this.getDataTracker().get(ORIENTATION_Z));
-		nbt.putFloat("OrientationW", this.getDataTracker().get(ORIENTATION_W));
-		nbt.putInt("CpuDividedBy", this.getDataTracker().get(CPU_DIVIDED_BY));
-		nbt.putString("IsoFileName", this.getDataTracker().get(ISO_FILE_NAME));
-		nbt.putInt("GbRamSlot0", this.getDataTracker().get(GB_OF_RAM_IN_SLOT_0));
-		nbt.putInt("GbRamSlot1", this.getDataTracker().get(GB_OF_RAM_IN_SLOT_1));
-		nbt.putBoolean("GpuInstalled", this.getDataTracker().get(GPU_IN_PCI_SLOT));
-		nbt.putString("HardDriveFileName", this.getDataTracker().get(HARD_DRIVE_FILE_NAME));
-		nbt.putBoolean("MotherboardInstalled", this.getDataTracker().get(MOTHERBOARD_INSTALLED));
-		nbt.putBoolean("GlassSidepanel", this.getDataTracker().get(GLASS_SIDEPANEL));
-		nbt.putString("Owner", this.getDataTracker().get(OWNER_UUID));
+	protected void writeCustomDataToTag(CompoundTag tag) {
+		tag.putBoolean("X64", this.getDataTracker().get(SIXTY_FOUR_BIT));
+		tag.putFloat("LookAtX", this.getDataTracker().get(LOOK_AT_POS_X));
+		tag.putFloat("LookAtY", this.getDataTracker().get(LOOK_AT_POS_Y));
+		tag.putFloat("LookAtZ", this.getDataTracker().get(LOOK_AT_POS_Z));
+		tag.putInt("CpuDividedBy", this.getDataTracker().get(CPU_DIVIDED_BY));
+		tag.putString("IsoFileName", this.getDataTracker().get(ISO_FILE_NAME));
+		tag.putInt("GbRamSlot0", this.getDataTracker().get(GB_OF_RAM_IN_SLOT_0));
+		tag.putInt("GbRamSlot1", this.getDataTracker().get(GB_OF_RAM_IN_SLOT_1));
+		tag.putBoolean("GpuInstalled", this.getDataTracker().get(GPU_IN_PCI_SLOT));
+		tag.putString("HardDriveFileName", this.getDataTracker().get(HARD_DRIVE_FILE_NAME));
+		tag.putBoolean("MotherboardInstalled", this.getDataTracker().get(MOTHERBOARD_INSTALLED));
+		tag.putBoolean("GlassSidepanel", this.getDataTracker().get(GLASS_SIDEPANEL));
+		tag.putString("Owner", this.getDataTracker().get(OWNER_UUID));
 	}
 	
 	public String getHardDriveFileName() { return this.getDataTracker().get(HARD_DRIVE_FILE_NAME); }
@@ -233,23 +221,13 @@ public class EntityPC extends Entity{
 					ClientMod.currentPC = this;
 					MainMod.pcOpenGui.run();
 				}else
-					player.sendMessage(Text.translatable("mcvmcomputers.not_your_computer").formatted(Formatting.RED),false);
+					player.sendMessage(new TranslatableText("mcvmcomputers.not_your_computer").formatted(Formatting.RED),false);
 		}
 		return ActionResult.SUCCESS;
 	}
-
+	
 	@Override
-	public boolean collidesWith(Entity other) {
-		return true;
-	}
-
-	@Override
-	public boolean isCollidable() {
-		return true;
-	}
-
-	@Override
-	public boolean canHit() {
+	public boolean collides() {
 		return true;
 	}
 

@@ -40,7 +40,7 @@ public class DeliveryChestModel extends EntityModel<Entity> {
 	public DeliveryChestModel() throws IOException {
 		mcc = MinecraftClient.getInstance();
 
-		baseTexture = NativeImage.read((InputStream) mcc.getResourceManager().getResource(new Identifier("mcvmcomputers", "textures/entity/delivery_chest.png")).stream());
+		baseTexture = NativeImage.read((InputStream) mcc.getResourceManager().getResource(new Identifier("mcvmcomputers", "textures/entity/delivery_chest.png")));
 		ModelPartData model = new ModelData().getRoot();
 
 		ModelPartBuilder base = createMPB(-6f, -5f, -6f, 12f, 8f, 12f, false);
@@ -111,12 +111,12 @@ public class DeliveryChestModel extends EntityModel<Entity> {
 		ni.copyFrom(baseTexture);
 		for(int x = 38; x < 50; x++) {
 			for(int y = 34; y < 40; y++) {
-				ni.setColor(x, y, randomColor());
+				ni.setPixelColor(x, y, randomColor());
 			}
 		}
 		for(int x = 32; x < 56; x++) {
 			for(int y = 40; y < 43; y++) {
-				ni.setColor(x, y, randomColor());
+				ni.setPixelColor(x, y, randomColor());
 			}
 		}
 		nibt = new NativeImageBackedTexture(ni);

@@ -3,7 +3,6 @@ package mcvmcomputers.item;
 import java.lang.reflect.Constructor;
 
 import mcvmcomputers.client.ClientMod;
-import mcvmcomputers.utils.MVCUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -14,7 +13,6 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Quaternion;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -26,7 +24,7 @@ public class PlacableItem extends Item{
 		super(settings);
 		this.placeSound = placeSound;
 		try {
-			constructor = entityPlaced.getConstructor(World.class, Double.class, Double.class, Double.class, Quaternion.class, String.class);
+			constructor = entityPlaced.getConstructor(World.class, Double.class, Double.class, Double.class, Vec3d.class, String.class);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -43,8 +41,9 @@ public class PlacableItem extends Item{
 											hr.getPos().getX(),
 											hr.getPos().getY(),
 											hr.getPos().getZ(),
-											MVCUtils.lookAt(hr.getPos(), new Vec3d(user.getPos().x, hr.getPos().y, user.getPos().z)),
-											user.getUuid().toString());
+											new Vec3d(user.getPos().x,
+														hr.getPos().getY(),
+														user.getPos().z), user.getUuid().toString());
 				world.spawnEntity(ek);
 			} catch (Exception e) {
 				e.printStackTrace();

@@ -10,22 +10,20 @@ import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.math.Quaternion;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 public class EntityFlatScreen extends Entity{
-	private static final TrackedData<Float> ORIENTATION_X =
+	private static final TrackedData<Float> LOOK_AT_POS_X =
 			DataTracker.registerData(EntityFlatScreen.class, TrackedDataHandlerRegistry.FLOAT);
-	private static final TrackedData<Float> ORIENTATION_Y =
+	private static final TrackedData<Float> LOOK_AT_POS_Y =
 			DataTracker.registerData(EntityFlatScreen.class, TrackedDataHandlerRegistry.FLOAT);
-	private static final TrackedData<Float> ORIENTATION_Z =
-			DataTracker.registerData(EntityFlatScreen.class, TrackedDataHandlerRegistry.FLOAT);
-	private static final TrackedData<Float> ORIENTATION_W =
+	private static final TrackedData<Float> LOOK_AT_POS_Z =
 			DataTracker.registerData(EntityFlatScreen.class, TrackedDataHandlerRegistry.FLOAT);
 	
 	private static final TrackedData<String> OWNER_UUID =
@@ -40,30 +38,41 @@ public class EntityFlatScreen extends Entity{
 		this.updatePosition(x, y, z);
 	}
 	
-	public EntityFlatScreen(World world, Double x, Double y, Double z, Quaternion quaternion, String uuid) {
+	public EntityFlatScreen(World world, Double x, Double y, Double z, Vec3d lookAt, String uuid) {
 		this(EntityList.FLATSCREEN, world);
 		this.updatePosition(x, y, z);
-		this.getDataTracker().set(ORIENTATION_X, quaternion.getX());
-		this.getDataTracker().set(ORIENTATION_Y, quaternion.getY());
-		this.getDataTracker().set(ORIENTATION_Z, quaternion.getZ());
-		this.getDataTracker().set(ORIENTATION_W, quaternion.getW());
+		this.getDataTracker().set(LOOK_AT_POS_X, (float)lookAt.x);
+		this.getDataTracker().set(LOOK_AT_POS_Y, (float)lookAt.y);
+		this.getDataTracker().set(LOOK_AT_POS_Z, (float)lookAt.z);
 		this.getDataTracker().set(OWNER_UUID, uuid);
 	}
-
-	public Quaternion getOrientation() {
-		return new Quaternion(this.getDataTracker().get(ORIENTATION_X),
-				this.getDataTracker().get(ORIENTATION_Y),
-				this.getDataTracker().get(ORIENTATION_Z),
-				this.getDataTracker().get(ORIENTATION_W));
+	
+	public Vec3d getLookAtPos() {
+		return new Vec3d(this.getDataTracker().get(LOOK_AT_POS_X),
+						 this.getDataTracker().get(LOOK_AT_POS_Y),
+						 this.getDataTracker().get(LOOK_AT_POS_Z));
 	}
 
 	@Override
 	protected void initDataTracker() {
-		this.getDataTracker().startTracking(ORIENTATION_X, 0f);
-		this.getDataTracker().startTracking(ORIENTATION_Y, 0f);
-		this.getDataTracker().startTracking(ORIENTATION_Z, 0f);
-		this.getDataTracker().startTracking(ORIENTATION_W, 0f);
+		this.getDataTracker().startTracking(LOOK_AT_POS_X, 0f);
+		this.getDataTracker().startTracking(LOOK_AT_POS_Y, 0f);
+		this.getDataTracker().startTracking(LOOK_AT_POS_Z, 0f);
 		this.getDataTracker().startTracking(OWNER_UUID, "");
+	}
+	@Override
+	protected void readCustomDataFromTag(CompoundTag tag) {
+		this.getDataTracker().set(LOOK_AT_POS_X, tag.getFloat("LookAtX"));
+		this.getDataTracker().set(LOOK_AT_POS_Y, tag.getFloat("LookAtY"));
+		this.getDataTracker().set(LOOK_AT_POS_Z, tag.getFloat("LookAtZ"));
+		this.getDataTracker().set(OWNER_UUID, tag.getString("Owner"));
+	}
+	@Override
+	protected void writeCustomDataToTag(CompoundTag tag) {
+		tag.putFloat("LookAtX", this.getDataTracker().get(LOOK_AT_POS_X));
+		tag.putFloat("LookAtY", this.getDataTracker().get(LOOK_AT_POS_Y));
+		tag.putFloat("LookAtZ", this.getDataTracker().get(LOOK_AT_POS_Z));
+		tag.putString("Owner", this.getDataTracker().get(OWNER_UUID));
 	}
 	
 	@Override
@@ -91,37 +100,14 @@ public class EntityFlatScreen extends Entity{
 			this.kill();
 		}
 	}
-
+	
 	@Override
-	protected void readCustomDataFromNbt(NbtCompound nbt) {
-		this.getDataTracker().set(ORIENTATION_X, nbt.getFloat("OrientationX"));
-		this.getDataTracker().set(ORIENTATION_Y, nbt.getFloat("OrientationY"));
-		this.getDataTracker().set(ORIENTATION_Z, nbt.getFloat("OrientationZ"));
-		this.getDataTracker().set(ORIENTATION_W, nbt.getFloat("OrientationW"));
-		this.getDataTracker().set(OWNER_UUID, nbt.getString("Owner"));
-	}
-
-	@Override
-	protected void writeCustomDataToNbt(NbtCompound nbt) {
-		nbt.putFloat("OrientationX", this.getDataTracker().get(ORIENTATION_X));
-		nbt.putFloat("OrientationY", this.getDataTracker().get(ORIENTATION_Y));
-		nbt.putFloat("OrientationZ", this.getDataTracker().get(ORIENTATION_Z));
-		nbt.putFloat("OrientationW", this.getDataTracker().get(ORIENTATION_W));
-		nbt.putString("Owner", this.getDataTracker().get(OWNER_UUID));
-	}
-
-	@Override
-	public boolean collidesWith(Entity other) {
+	public boolean collides() {
 		return true;
 	}
-
+	
 	public String getOwnerUUID() {
 		return this.getDataTracker().get(OWNER_UUID);
-	}
-
-	@Override
-	public boolean canHit() {
-		return true;
 	}
 
 	@Override
