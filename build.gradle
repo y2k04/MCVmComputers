@@ -26,17 +26,13 @@ dependencies {
 	shadow files('lib/vboxjws.jar')
 }
 
-loom {
-	accessWidenerPath = file("src/main/resources/mcvmcomputers.accesswidener")
-}
-
-task getVirtualBoxSDK(type: Download) {
+tasks.register('getVirtualBoxSDK') {
 	src "https://download.virtualbox.org/virtualbox/${project.vboxsdk_version}/VirtualBoxSDK-${project.vboxsdk_version}-${project.vboxsdk_revision}.zip"
 	dest file('tmp/VirtualBoxSDK.zip')
 
 	doLast {
-		copy {from zipTree(file('tmp/VirtualBoxSDK.zip')) into file('tmp')}
-		copy {from file('tmp/sdk/bindings/webservice/java/jax-ws/vboxjws.jar') into file('lib')}
+		copy { from zipTree(file('tmp/VirtualBoxSDK.zip')) into file('tmp') }
+		copy { from file('tmp/sdk/bindings/webservice/java/jax-ws/vboxjws.jar') into file('lib') }
 		delete file('tmp')
 	}
 }
@@ -65,11 +61,11 @@ processResources {
 	}
 }
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
 	options.encoding = "UTF-8"
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
+tasks.register('sourcesJar') {
 	classifier = "sources"
 	from sourceSets.main.allSource
 }
