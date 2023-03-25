@@ -7,7 +7,7 @@
 
 <h3>Dependencies</h3>
 <ul>
-	<li>Minecraft 1.19.2</li>
+	<li>Minecraft 1.17</li>
 	<ul>
 		<li><a href="https://fabricmc.net/use">Fabric</a></li>
 		<li><a href="https://curseforge.com/minecraft/mc-mods/fabric-api">Fabric API</a></li>
