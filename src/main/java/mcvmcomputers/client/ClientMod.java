@@ -18,9 +18,9 @@ import java.util.zip.Inflater;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.lwjgl.glfw.GLFW;
-import org.virtualbox_6_1.ISession;
-import org.virtualbox_6_1.IVirtualBox;
-import org.virtualbox_6_1.VirtualBoxManager;
+import org.virtualbox_7_0.ISession;
+import org.virtualbox_7_0.IVirtualBox;
+import org.virtualbox_7_0.VirtualBoxManager;
 
 import io.netty.buffer.Unpooled;
 import mcvmcomputers.MainMod;
@@ -45,7 +45,7 @@ import mcvmcomputers.networking.PacketList;
 import mcvmcomputers.utils.TabletOrder;
 import mcvmcomputers.utils.TabletOrder.OrderStatus;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.rendereregistry.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.texture.NativeImage;
@@ -54,6 +54,8 @@ import net.minecraft.network.PacketByteBuf;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+
+import static mcvmcomputers.utils.MVCUtils.registerEntityRenderer;
 
 public class ClientMod implements ClientModInitializer{
 	public static final OutputStream discardAllBytes = new OutputStream() { @Override public void write(int b) throws IOException {} };
@@ -352,22 +354,14 @@ public class ClientMod implements ClientModInitializer{
 		vmScreenTextureNI = new HashMap<UUID, NativeImage>();
 		vmScreenTextureNIBT = new HashMap<UUID, NativeImageBackedTexture>();
 		
-		EntityRendererRegistry.INSTANCE.register(EntityList.ITEM_PREVIEW,
-				(entityRenderDispatcher, context) -> new ItemPreviewRender(entityRenderDispatcher));
-		EntityRendererRegistry.INSTANCE.register(EntityList.KEYBOARD,
-				(entityRenderDispatcher, context) -> new KeyboardRender(entityRenderDispatcher));
-		EntityRendererRegistry.INSTANCE.register(EntityList.MOUSE,
-				(entityRenderDispatcher, context) -> new MouseRender(entityRenderDispatcher));
-		EntityRendererRegistry.INSTANCE.register(EntityList.CRT_SCREEN,
-				(entityRenderDispatcher, context) -> new CRTScreenRender(entityRenderDispatcher));
-		EntityRendererRegistry.INSTANCE.register(EntityList.FLATSCREEN,
-				(entityRenderDispatcher, context) -> new FlatScreenRender(entityRenderDispatcher));
-		EntityRendererRegistry.INSTANCE.register(EntityList.WALLTV,
-				(entityRenderDispatcher, context) -> new WallTVRender(entityRenderDispatcher));
-		EntityRendererRegistry.INSTANCE.register(EntityList.PC,
-				(entityRenderDispatcher, context) -> new PCRender(entityRenderDispatcher));
-		EntityRendererRegistry.INSTANCE.register(EntityList.DELIVERY_CHEST,
-				(entityRenderDispatcher, context) -> new DeliveryChestRender(entityRenderDispatcher));
+		registerEntityRenderer(EntityList.ITEM_PREVIEW, ItemPreviewRender.class);
+		registerEntityRenderer(EntityList.KEYBOARD, KeyboardRender.class);
+		registerEntityRenderer(EntityList.MOUSE, MouseRender.class);
+		registerEntityRenderer(EntityList.CRT_SCREEN, CRTScreenRender.class);
+		registerEntityRenderer(EntityList.FLATSCREEN, FlatScreenRender.class);
+		registerEntityRenderer(EntityList.WALLTV, WallTVRender.class);
+		registerEntityRenderer(EntityList.PC, PCRender.class);
+		registerEntityRenderer(EntityList.DELIVERY_CHEST, DeliveryChestRender.class);
 	}
 
 }

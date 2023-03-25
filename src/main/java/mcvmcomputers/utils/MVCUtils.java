@@ -1,5 +1,8 @@
 package mcvmcomputers.utils;
 
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.minecraft.client.render.entity.EntityRenderer;
+import net.minecraft.entity.EntityType;
 import net.minecraft.util.math.Quaternion;
 import net.minecraft.util.math.Vec3d;
 
@@ -40,5 +43,17 @@ public class MVCUtils {
 	public static final char COLOR_CHAR = (char) (0xfeff00a7);
 	public static String getColorChar(char color) {
 		return COLOR_CHAR + "" + color;
+	}
+
+	public static void registerEntityRenderer(EntityType<?> entity, Class<? extends EntityRenderer<?>> renderer) {
+		EntityRendererRegistry.register(entity, (context) -> {
+			EntityRenderer render = null;
+			try {
+				render = renderer.getConstructor(context.getClass()).newInstance(context);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return render;
+		});
 	}
 }
