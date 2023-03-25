@@ -9,7 +9,6 @@
 | Accessories |     | Headphones, mice, microphone, desk pad, mouse pad, RGB versions of them |
 | Chairs |     | Generic chair, RGB, "Secret Lab"-style, and office chairs |
 | Multi-core support (VirtualBox) |     | Currently limited to 1 core |
-| VMware support |     |     |
 | QEMU support |     | Not sure whether there is a Java library for it. |
 | PCEM support |     |     |
 | DOSBox support |     |     |
@@ -26,3 +25,7 @@
 | Cables |     | Only allow a certain radius for stuff to be connected to the computer, could repurpose the lead? |
 | Server racks |     | Linus Tech Tips style rack (his personal rig is a literal server rack) |
 | Multi-core CPUs |     |     |
+
+NOT PLANNED FEATURES:
+ - VMware Support
+      - No APIs that are useful for this sort of project.
