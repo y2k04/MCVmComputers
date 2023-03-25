@@ -25,6 +25,7 @@
 | Cables |     | Only allow a certain radius for stuff to be connected to the computer, could repurpose the lead? |
 | Server racks |     | Linus Tech Tips style rack (his personal rig is a literal server rack) |
 | Multi-core CPUs |     |     |
+| Forge version |     | The Forge community needs some love too :3 |
 
 NOT PLANNED FEATURES:
  - VMware Support
