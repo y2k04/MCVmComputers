@@ -1,5 +1,7 @@
 <p align="center"><img src="https://raw.githubusercontent.com/y2k04/MCVmComputers/master/src/main/resources/assets/mcvmcomputers/icon.png" height="320"></p>
 
+<b><a href="https://discord.gg/gNgaxZa4yX">Join the MCVmComputers Discord Server!</a>
+
 <details>
 	<summary>Donate to the original creator (<a href="https://github.com/Delta2Force">Delta2Force</a>)<br><sub><i>Note: Only accepts Bitcoin and BitcoinCash</i></sub></summary>
 <i>BTC:</i> <code>3GubEkHV69gCkjWhRgRWYqWqyjcWW3gxFF</code><br><i>BCH:</i> <code>bitcoincash:qq6jttzlvgj68lvecnh75pt3znezj4vx6sysfvj3j5</code>
