@@ -17,7 +17,7 @@ import net.minecraft.world.World;
 
 public class PlacableOrderableItem extends OrderableItem{
 	private Constructor<? extends Entity> constructor;
-	private SoundEvent placeSound;
+	private final SoundEvent placeSound;
 	public final boolean wallTV;
 	
 	public PlacableOrderableItem(Settings settings, Class<? extends Entity> entityPlaced, SoundEvent placeSound, int price, boolean wallTV) {
@@ -63,7 +63,7 @@ public class PlacableOrderableItem extends OrderableItem{
 							SoundCategory.BLOCKS, 1, 1, true);
 		}
 		
-		return new TypedActionResult<ItemStack>(ActionResult.SUCCESS, user.getStackInHand(hand));
+		return new TypedActionResult<>(ActionResult.SUCCESS, user.getStackInHand(hand));
 	}
 
 }

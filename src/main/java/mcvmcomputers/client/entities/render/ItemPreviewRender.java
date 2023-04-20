@@ -13,6 +13,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Quaternion;
 import net.minecraft.util.math.Vec3d;
 
+import java.util.Objects;
 import java.util.random.RandomGenerator;
 
 public class ItemPreviewRender extends EntityRenderer<EntityItemPreview> {
@@ -33,7 +34,7 @@ public class ItemPreviewRender extends EntityRenderer<EntityItemPreview> {
 		matrices.push();
 		
 		matrices.translate(0, 0.5, 0);
-		Vec3d v = mcc.player.getPos();
+		Vec3d v = Objects.requireNonNull(mcc.player).getPos();
 		Quaternion look = MVCUtils.lookAt(entity.getPos(), new Vec3d(v.x, entity.getY(), v.z));
 		matrices.multiply(look);
 		matrices.push();

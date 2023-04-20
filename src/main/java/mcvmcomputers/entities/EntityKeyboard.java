@@ -9,7 +9,7 @@ import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.util.ActionResult;
@@ -34,7 +34,7 @@ public class EntityKeyboard extends Entity{
 		this.updatePosition(x, y, z);
 	}
 	
-	public EntityKeyboard(World world, Double x, Double y, Double z, Vec3d lookAt, String uuid) {
+	public EntityKeyboard(World world, Double x, Double y, Double z, Vec3d lookAt, String ignoredUuid) {
 		this(EntityList.KEYBOARD, world);
 		this.updatePosition(x, y, z);
 		this.getDataTracker().set(LOOK_AT_POS_X, (float)lookAt.x);
@@ -51,18 +51,6 @@ public class EntityKeyboard extends Entity{
 		this.getDataTracker().startTracking(LOOK_AT_POS_X, 0f);
 		this.getDataTracker().startTracking(LOOK_AT_POS_Y, 0f);
 		this.getDataTracker().startTracking(LOOK_AT_POS_Z, 0f);
-	}
-	@Override
-	protected void readCustomDataFromTag(CompoundTag tag) {
-		this.getDataTracker().set(LOOK_AT_POS_X, tag.getFloat("LookAtX"));
-		this.getDataTracker().set(LOOK_AT_POS_Y, tag.getFloat("LookAtY"));
-		this.getDataTracker().set(LOOK_AT_POS_Z, tag.getFloat("LookAtZ"));
-	}
-	@Override
-	protected void writeCustomDataToTag(CompoundTag tag) {
-		tag.putFloat("LookAtX", this.getDataTracker().get(LOOK_AT_POS_X));
-		tag.putFloat("LookAtY", this.getDataTracker().get(LOOK_AT_POS_Y));
-		tag.putFloat("LookAtZ", this.getDataTracker().get(LOOK_AT_POS_Z));
 	}
 	
 	@Override
@@ -81,6 +69,20 @@ public class EntityKeyboard extends Entity{
 	@Override
 	public boolean collides() {
 		return true;
+	}
+
+	@Override
+	protected void readCustomDataFromNbt(NbtCompound nbt) {
+		this.getDataTracker().set(LOOK_AT_POS_X, nbt.getFloat("LookAtX"));
+		this.getDataTracker().set(LOOK_AT_POS_Y, nbt.getFloat("LookAtY"));
+		this.getDataTracker().set(LOOK_AT_POS_Z, nbt.getFloat("LookAtZ"));
+	}
+
+	@Override
+	protected void writeCustomDataToNbt(NbtCompound nbt) {
+		nbt.putFloat("LookAtX", this.getDataTracker().get(LOOK_AT_POS_X));
+		nbt.putFloat("LookAtY", this.getDataTracker().get(LOOK_AT_POS_Y));
+		nbt.putFloat("LookAtZ", this.getDataTracker().get(LOOK_AT_POS_Z));
 	}
 
 	@Override

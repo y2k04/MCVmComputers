@@ -8,17 +8,18 @@ import java.nio.file.Files;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.virtualbox_6_1.IMachine;
-import org.virtualbox_6_1.IProgress;
-import org.virtualbox_6_1.ISession;
-import org.virtualbox_6_1.LockType;
-import org.virtualbox_6_1.MachineState;
-import org.virtualbox_6_1.VBoxException;
+import org.virtualbox_7_0.IMachine;
+import org.virtualbox_7_0.IProgress;
+import org.virtualbox_7_0.ISession;
+import org.virtualbox_7_0.LockType;
+import org.virtualbox_7_0.MachineState;
+import org.virtualbox_7_0.VBoxException;
 
 import mcvmcomputers.client.gui.setup.GuiSetup;
 import mcvmcomputers.client.tablet.TabletOS;
@@ -58,6 +59,7 @@ public class GameloopMixin {
 	@Shadow
 	private float pausedTickDelta;
 	
+	@Final
 	@Shadow
 	private RenderTickCounter renderTickCounter;
 	
@@ -98,12 +100,9 @@ public class GameloopMixin {
 		}else {
 			try {
 				tabletOS = new TabletOS();
-				tabletThread = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						while(true) {
-							try {tabletOS.render();}catch(ConcurrentModificationException e) {}
-						}
+				tabletThread = new Thread(() -> {
+					while(true) {
+						try {tabletOS.render();}catch(ConcurrentModificationException ignored) {}
 					}
 				}, "Tablet Renderer");
 				tabletThread.start();
@@ -212,7 +211,7 @@ public class GameloopMixin {
 			try {
 				mach = vb.findMachine("VmComputersVm");
 				vmExists = true;
-			}catch(VBoxException e) {}
+			}catch(VBoxException ignored) {}
 
 			if(vmExists) {
 				if(mach.getState() == MachineState.Running || mach.getState() == MachineState.Starting) {
@@ -265,7 +264,7 @@ public class GameloopMixin {
 			try {
 				mach = vb.findMachine("VmComputersVm");
 				vmExists = true;
-			}catch(VBoxException e) {}
+			}catch(VBoxException ignored) {}
 			
 			if(vmExists) {
 				if(mach.getState() == MachineState.Running || mach.getState() == MachineState.Starting) {

@@ -1,7 +1,9 @@
 package mcvmcomputers.mixins;
 
+import java.util.Objects;
 import java.util.UUID;
 
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,7 +19,6 @@ import mcvmcomputers.item.OrderableItem;
 import mcvmcomputers.networking.PacketList;
 import mcvmcomputers.utils.TabletOrder;
 import mcvmcomputers.utils.TabletOrder.OrderStatus;
-import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
@@ -66,14 +67,14 @@ public class ServerMixin {
 			}else if(order.currentStatus == OrderStatus.ORDER_CHEST_ARRIVED) {
 				if(!order.entitySpawned) {
 					PlayerEntity p = playerManager.getPlayer(UUID.fromString(order.orderUUID));
-					World w = p.world;
+					World w = Objects.requireNonNull(p).world;
 					w.spawnEntity(new EntityDeliveryChest(w, new Vec3d(p.getX(), p.getY(), p.getZ()), p.getUuid()));
 					order.entitySpawned = true;
 				}
 			}else if(order.currentStatus == OrderStatus.PAYMENT_CHEST_ARRIVED) {
 				if(!order.entitySpawned) {
 					PlayerEntity p = playerManager.getPlayer(UUID.fromString(order.orderUUID));
-					World w = p.world;
+					World w = Objects.requireNonNull(p).world;
 					w.spawnEntity(new EntityDeliveryChest(w, new Vec3d(p.getX(), p.getY(), p.getZ()), p.getUuid()));
 					order.entitySpawned = true;
 				}
@@ -86,7 +87,7 @@ public class ServerMixin {
 			}
 			pb.writeInt(order.price);
 			pb.writeInt(order.currentStatus.ordinal());
-			ServerSidePacketRegistry.INSTANCE.sendToPlayer(playerManager.getPlayer(UUID.fromString(order.orderUUID)), PacketList.S2C_SYNC_ORDER, pb);
+			ServerPlayNetworking.send(Objects.requireNonNull(playerManager.getPlayer(UUID.fromString(order.orderUUID))), PacketList.S2C_SYNC_ORDER, pb);
 		}
 	}
 }

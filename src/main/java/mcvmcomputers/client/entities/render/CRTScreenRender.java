@@ -26,8 +26,6 @@ public class CRTScreenRender extends EntityRenderer<EntityCRTScreen>{
 	      RenderSystem.defaultBlendFunc();
 	   }, RenderSystem::disableBlend);
 
-	protected static final float ONE_TENTH_ALPHA = 0.003921569F;
-
 	public CRTScreenRender(EntityRendererFactory.Context ctx) {
 		super(ctx);
 	}

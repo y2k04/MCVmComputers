@@ -83,8 +83,7 @@ public class ItemList {
 		registerItem("pc_case_only_glass_sidepanel", PC_CASE_GLASS_PANEL);
 	}
 	
-	private static Item registerItem(String id, Item it) {
+	private static void registerItem(String id, Item it) {
 		Registry.register(Registry.ITEM, new Identifier("mcvmcomputers", id), it);
-		return it;
 	}
 }

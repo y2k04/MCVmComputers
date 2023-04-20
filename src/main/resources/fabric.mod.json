@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "mcvmcomputers",
-  "version": "${version}",
+  "version": "${project.mod_version}",
 
   "name": "VM Computers",
   "description": "Build computers that actually work using the VirtualBox API!",
@@ -30,9 +30,9 @@
   ],
 
   "depends": {
-    "fabricloader": ">=0.10.0",
+    "fabricloader": ">=0.14.19",
     "fabric": "*",
-    "minecraft": "1.16.5"
+    "minecraft": "1.17"
   },
   "suggests": {
     "flamingo": "*"

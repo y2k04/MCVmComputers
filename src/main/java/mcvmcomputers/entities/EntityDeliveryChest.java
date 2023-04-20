@@ -1,5 +1,6 @@
 package mcvmcomputers.entities;
 
+import java.util.Objects;
 import java.util.UUID;
 
 import mcvmcomputers.MainMod;
@@ -17,7 +18,7 @@ import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.text.TranslatableText;
@@ -30,15 +31,15 @@ import net.minecraft.world.World;
 
 public class EntityDeliveryChest extends Entity{
 	private static final TrackedData<Float> TARGET_X =
-			DataTracker.registerData(EntityFlatScreen.class, TrackedDataHandlerRegistry.FLOAT);
+			DataTracker.registerData(EntityDeliveryChest.class, TrackedDataHandlerRegistry.FLOAT);
 	private static final TrackedData<Float> TARGET_Y =
-			DataTracker.registerData(EntityFlatScreen.class, TrackedDataHandlerRegistry.FLOAT);
+			DataTracker.registerData(EntityDeliveryChest.class, TrackedDataHandlerRegistry.FLOAT);
 	private static final TrackedData<Float> TARGET_Z =
-			DataTracker.registerData(EntityFlatScreen.class, TrackedDataHandlerRegistry.FLOAT);
+			DataTracker.registerData(EntityDeliveryChest.class, TrackedDataHandlerRegistry.FLOAT);
 	private static final TrackedData<Boolean> TAKING_OFF =
-			DataTracker.registerData(EntityFlatScreen.class, TrackedDataHandlerRegistry.BOOLEAN);
+			DataTracker.registerData(EntityDeliveryChest.class, TrackedDataHandlerRegistry.BOOLEAN);
 	private static final TrackedData<String> DELIVERY_UUID =
-			DataTracker.registerData(EntityFlatScreen.class, TrackedDataHandlerRegistry.STRING);
+			DataTracker.registerData(EntityDeliveryChest.class, TrackedDataHandlerRegistry.STRING);
 	
 	//Client vars
 	public float renderRot = 90f;
@@ -89,21 +90,6 @@ public class EntityDeliveryChest extends Entity{
 	}
 	
 	@Override
-	protected void readCustomDataFromTag(CompoundTag tag) {
-		this.getDataTracker().set(TARGET_X, tag.getFloat("TargetX"));
-		this.getDataTracker().set(TARGET_Y, tag.getFloat("TargetY"));
-		this.getDataTracker().set(TARGET_Z, tag.getFloat("TargetZ"));
-		this.getDataTracker().set(DELIVERY_UUID, tag.getString("DeliveryUUID"));
-	}
-	@Override
-	protected void writeCustomDataToTag(CompoundTag tag) {
-		tag.putFloat("TargetX", this.getDataTracker().get(TARGET_X));
-		tag.putFloat("TargetY", this.getDataTracker().get(TARGET_Y));
-		tag.putFloat("TargetZ", this.getDataTracker().get(TARGET_Z));
-		tag.putString("DeliveryUUID", this.getDataTracker().get(DELIVERY_UUID));
-	}
-	
-	@Override
 	public void tick() {
 		super.tick();
 		if(!this.world.isClient) {
@@ -116,7 +102,7 @@ public class EntityDeliveryChest extends Entity{
 				TabletOrder to = MainMod.orders.get(UUID.fromString(getDeliveryUUID()));
 				if(to.currentStatus == OrderStatus.PAYMENT_CHEST_RECEIVING || to.currentStatus == OrderStatus.ORDER_CHEST_RECEIVED) {
 					this.getDataTracker().set(TAKING_OFF, true);
-					takeOffTime += this.getServer().getTickTime() / 1000f;
+					takeOffTime += Objects.requireNonNull(this.getServer()).getTickTime() / 1000f;
 					if(takeOffTime > 0.5f) {
 						this.kill();
 						to.entitySpawned = false;
@@ -192,7 +178,7 @@ public class EntityDeliveryChest extends Entity{
 		return this.getDataTracker().get(TAKING_OFF);
 	}
 	
-	public void updateRenderPos(double x, double y, double z) {
+	public void updateRenderPos(double ignoredX, double y, double z) {
 		this.renderOffY = (float) (y - this.getY());
 		this.renderOffZ = (float) (z - this.getZ());
 	}
@@ -206,10 +192,26 @@ public class EntityDeliveryChest extends Entity{
 	public boolean collides() {
 		return true;
 	}
-	
+
 	@Override
-	public void remove() {
-		super.remove();
+	protected void readCustomDataFromNbt(NbtCompound nbt) {
+		this.getDataTracker().set(TARGET_X, nbt.getFloat("TargetX"));
+		this.getDataTracker().set(TARGET_Y, nbt.getFloat("TargetY"));
+		this.getDataTracker().set(TARGET_Z, nbt.getFloat("TargetZ"));
+		this.getDataTracker().set(DELIVERY_UUID, nbt.getString("DeliveryUUID"));
+	}
+
+	@Override
+	protected void writeCustomDataToNbt(NbtCompound nbt) {
+		nbt.putFloat("TargetX", this.getDataTracker().get(TARGET_X));
+		nbt.putFloat("TargetY", this.getDataTracker().get(TARGET_Y));
+		nbt.putFloat("TargetZ", this.getDataTracker().get(TARGET_Z));
+		nbt.putString("DeliveryUUID", this.getDataTracker().get(DELIVERY_UUID));
+	}
+
+	@Override
+	public void remove(RemovalReason reason) {
+		super.remove(reason);
 		if(world.isClient) {
 			ClientMod.currentDeliveryChest = this;
 			MainMod.deliveryChestSound.run();

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.lang3.SystemUtils;
 
@@ -19,7 +20,6 @@ import mcvmcomputers.client.gui.setup.pages.SetupPageVboxDirectory;
 import mcvmcomputers.client.utils.VMSettings;
 import mcvmcomputers.utils.MVCUtils;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.util.math.MatrixStack;
@@ -35,26 +35,19 @@ public class GuiSetup extends Screen{
 	public boolean startVb = false;
 	public String virtualBoxDirectory = "";
 	private Language language = Language.getInstance();
-	private MinecraftClient minecraft = MinecraftClient.getInstance();
+	private final MinecraftClient minecraft = MinecraftClient.getInstance();
 	
 	public GuiSetup() {
 		super(new LiteralText("Setup"));
 	}
-	
-	public void addElement(Element e) {
-		this.children.add(e);
-	}
+
 	
 	public void clearElements() {
-		this.children.clear();
-	}
-	
-	public void clearButtons() {
-		this.buttons.clear();
+		this.children().clear();
 	}
 	
 	public void addButton(ButtonWidget bw) {
-		super.addButton(bw);
+		super.addDrawableChild(bw);
 	}
 	
 	public void nextPage() {
@@ -82,7 +75,6 @@ public class GuiSetup extends Screen{
 	}
 
 	public void firstPage() {
-		this.clearButtons();
 		this.clearElements();
 		setupIndex = 0;
 		currentSetupPage = setupPages.get(0);
@@ -102,7 +94,7 @@ public class GuiSetup extends Screen{
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			if(set.vboxDirectory != null) {
+			if(Objects.requireNonNull(set).vboxDirectory != null) {
 				virtualBoxDirectory = set.vboxDirectory;
 			}else {
 				virtualBoxDirectory = new VMSettings().vboxDirectory;
@@ -117,7 +109,7 @@ public class GuiSetup extends Screen{
 			ClientMod.glfwUnfocusKey4 = set.unfocusKey4;
 			ClientMod.maxRam = set.maxRam;
 			ClientMod.videoMem = set.videoMem;
-			loadedConfiguration = !set.vmComputersDirectory.contains(" ");
+			loadedConfiguration = !Objects.requireNonNull(set.vmComputersDirectory).contains(" ");
 		}else{
 			virtualBoxDirectory = new VMSettings().vboxDirectory;
 		}
@@ -133,7 +125,6 @@ public class GuiSetup extends Screen{
 			currentSetupPage = setupPages.get(0);
 			initialized = true;
 		}
-		this.clearButtons();
 		this.clearElements();
 		currentSetupPage.init();
 	}
@@ -142,9 +133,9 @@ public class GuiSetup extends Screen{
 	public void render(MatrixStack ms, int mouseX, int mouseY, float delta) {
 		this.renderBackground(ms);
 		String title = translation("mcvmcomputers.setup.title");
-		this.textRenderer.draw(ms, title, this.width/2 - this.textRenderer.getWidth(title)/2, 20, -1);
-		String s = translation("mcvmcomputers.setup.page").replaceFirst("%s", ""+(setupIndex+1)).replaceFirst("%s", ""+setupPages.size());
-		this.textRenderer.draw(ms, s, this.width/2 - this.textRenderer.getWidth(s)/2, 30, -1);
+		this.textRenderer.draw(ms, title, this.width / 2f - this.textRenderer.getWidth(title) / 2f, 20, -1);
+		String s = translation("mcvmcomputers.setup.page").replaceFirst("%s", String.valueOf(setupIndex + 1)).replaceFirst("%s", String.valueOf(setupPages.size()));
+		this.textRenderer.draw(ms, s, this.width / 2f - this.textRenderer.getWidth(s) / 2f, 30, -1);
 		currentSetupPage.render(ms, mouseX, mouseY, delta);
 		super.render(ms, mouseX, mouseY, delta);
 	}

@@ -8,7 +8,7 @@ import mcvmcomputers.entities.EntityPC;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -50,7 +50,7 @@ public class ItemPCCase extends OrderableItem{
 							SoundCategory.BLOCKS, 1, 1, true);
 		}
 		
-		return new TypedActionResult<ItemStack>(ActionResult.SUCCESS, user.getStackInHand(hand));
+		return new TypedActionResult<>(ActionResult.SUCCESS, user.getStackInHand(hand));
 	}
 	
 	@Override
@@ -99,15 +99,15 @@ public class ItemPCCase extends OrderableItem{
 	public static ItemStack createPCStackByEntity(EntityPC pc) {
 		ItemStack is = new ItemStack(ItemList.PC_CASE);
 		if(pc.getMotherboardInstalled()) {
-			CompoundTag ct = is.getOrCreateTag();
-			ct.putBoolean("x64", pc.get64Bit());
-			ct.putBoolean("MoboInstalled", pc.getMotherboardInstalled());
-			ct.putBoolean("GPUInstalled", pc.getGpuInstalled());
-			ct.putInt("CPUDividedBy", pc.getCpuDividedBy());
-			ct.putInt("RAMSlot0", pc.getGigsOfRamInSlot0());
-			ct.putInt("RAMSlot1", pc.getGigsOfRamInSlot1());
-			ct.putString("VHDName", pc.getHardDriveFileName());
-			ct.putString("ISOName", pc.getIsoFileName());
+			NbtCompound nc = is.getOrCreateTag();
+			nc.putBoolean("x64", pc.get64Bit());
+			nc.putBoolean("MoboInstalled", pc.getMotherboardInstalled());
+			nc.putBoolean("GPUInstalled", pc.getGpuInstalled());
+			nc.putInt("CPUDividedBy", pc.getCpuDividedBy());
+			nc.putInt("RAMSlot0", pc.getGigsOfRamInSlot0());
+			nc.putInt("RAMSlot1", pc.getGigsOfRamInSlot1());
+			nc.putString("VHDName", pc.getHardDriveFileName());
+			nc.putString("ISOName", pc.getIsoFileName());
 		}
 		return is;
 	}

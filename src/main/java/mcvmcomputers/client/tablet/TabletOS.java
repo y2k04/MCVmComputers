@@ -1,24 +1,5 @@
 package mcvmcomputers.client.tablet;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontFormatException;
-import java.awt.GradientPaint;
-import java.awt.Graphics2D;
-import java.awt.Paint;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.imageio.ImageIO;
-
-import org.lwjgl.glfw.GLFW;
-
 import io.netty.buffer.Unpooled;
 import mcvmcomputers.client.ClientMod;
 import mcvmcomputers.client.entities.model.OrderingTabletModel;
@@ -29,8 +10,9 @@ import mcvmcomputers.sound.SoundList;
 import mcvmcomputers.sound.TabletSoundInstance;
 import mcvmcomputers.utils.MVCUtils;
 import mcvmcomputers.utils.TabletOrder.OrderStatus;
-import net.fabricmc.fabric.api.network.ClientSidePacketRegistry;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.client.texture.NativeImage;
@@ -39,6 +21,16 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
+import org.lwjgl.glfw.GLFW;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.*;
 
 public class TabletOS {
 	//Rendering variables
@@ -59,9 +51,9 @@ public class TabletOS {
 	private boolean arrowUpPressed = false;		 // Used for 'tapping' input.
 	private boolean arrowLeftPressed = false;	 // (e.g. GetKeyDown in Unity)
 	private boolean arrowRightPressed = false;	 //
-	private SoundInstance shopIntroSound;
-	private SoundInstance shopMusicSound;
-	private SoundInstance shopOutroSound;
+	private final SoundInstance shopIntroSound;
+	private final SoundInstance shopMusicSound;
+	private final SoundInstance shopOutroSound;
 	private ArrayList<OrderableItem> shoppingCart;
 	private static final List<OrderableItem> PC_PARTS = Arrays.asList(ItemList.PC_CASE, ItemList.PC_CASE_SIDEPANEL, ItemList.ITEM_MOTHERBOARD, ItemList.ITEM_MOTHERBOARD64, ItemList.ITEM_RAM64M, ItemList.ITEM_RAM128M, ItemList.ITEM_RAM256M, ItemList.ITEM_RAM512M, ItemList.ITEM_RAM1G, ItemList.ITEM_RAM2G, ItemList.ITEM_RAM4G, ItemList.ITEM_CPU2, ItemList.ITEM_CPU4, ItemList.ITEM_CPU6, ItemList.ITEM_GPU, ItemList.ITEM_HARDDRIVE);
 	private static final List<OrderableItem> PERIPHERALS = Arrays.asList(ItemList.ITEM_KEYBOARD, ItemList.ITEM_MOUSE, ItemList.ITEM_CRTSCREEN, ItemList.ITEM_FLATSCREEN, ItemList.ITEM_WALLTV);
@@ -71,15 +63,15 @@ public class TabletOS {
 	private float chestX;
 	private float chestY;
 	private boolean drawChest;
-	private SoundInstance displayOrderMusicSound;
+	private final SoundInstance displayOrderMusicSound;
 	
 	//Radar variables
-	private SoundInstance radarSound;
-	private ArrayList<Float> radarRadius; //radius of circles when looking at radar
+	private final SoundInstance radarSound;
+	private final ArrayList<Float> radarRadius; //radius of circles when looking at radar
 	private float totalTimeRadar;
 	private BufferedImage lastRadarImage; //last rendered image for transition from radar to store
 	private boolean satelliteVisible = false;
-	public final OrderingTabletModel orderingTabletModel = new OrderingTabletModel();
+	public final OrderingTabletModel orderingTabletModel = new OrderingTabletModel(new ModelPart(new ArrayList<>(), new TreeMap<>()));
 	
 	//General variables
 	private float deltaTime;
@@ -87,7 +79,7 @@ public class TabletOS {
 	public boolean tabletOn = false;
 	private final Font font;
 	public State tabletState = State.LOOKING_FOR_SATELLITE;
-	private MinecraftClient mcc = MinecraftClient.getInstance();
+	private final MinecraftClient mcc = MinecraftClient.getInstance();
 	
 	public TabletOS() throws FontFormatException, IOException {
 		radarSound = new TabletSoundInstance(SoundList.RADAR_SOUND);
@@ -96,7 +88,7 @@ public class TabletOS {
 		shopMusicSound = PositionedSoundInstance.master(SoundEvents.MUSIC_DISC_FAR, 0.6f, 0.2f);
 		displayOrderMusicSound = PositionedSoundInstance.master(SoundEvents.MUSIC_DISC_STRAD, 0.6f, 0.2f);
 		font = Font.createFont(Font.PLAIN, mcc.getResourceManager().getResource(new Identifier("mcvmcomputers", "font/tabletfont.ttf")).getInputStream());
-		radarRadius = new ArrayList<Float>();
+		radarRadius = new ArrayList<>();
 	}
 	
 	public void tabletTakenOut() {
@@ -148,7 +140,7 @@ public class TabletOS {
 					totalTimeRadar = 0;
 					radarRadius.add(0f);
 				}
-				ArrayList<Float> removeIndices = new ArrayList<Float>();
+				ArrayList<Float> removeIndices = new ArrayList<>();
 				for(int i = 0;i<radarRadius.size();i++) {
 					float f = radarRadius.get(i)+deltaTime*50;
 					radarRadius.set(i, f);
@@ -160,7 +152,7 @@ public class TabletOS {
 					radarRadius.remove(f);
 				}
 				removeIndices.clear();
-				float satelliteAngle = ((float)mcc.world.getSkyAngle(deltaTime)*5f);
+				float satelliteAngle = (mcc.world.getSkyAngle(deltaTime) *5f);
 				satelliteAngle %= 1f;
 				boolean canSee = satelliteAngle < 0.22249603 || satelliteAngle > 0.78432274;
 				satelliteVisible = canSee;
@@ -204,7 +196,7 @@ public class TabletOS {
 			if(totalTimeRadar > 2) {
 				mcc.getSoundManager().stop(shopIntroSound);
 				lastRadarImage = null;
-				shoppingCart = new ArrayList<OrderableItem>();
+				shoppingCart = new ArrayList<>();
 				tabletState = State.SHOP;
 				shopState = ShopState.MENU;
 				shopGradientEndValue = 1f;
@@ -451,7 +443,7 @@ public class TabletOS {
 			g2d.setColor(Color.white);
 			g2d.fillRect(64, (int)(190-shopPy), 128, 3);
 			
-			float satelliteAngle = ((float)mcc.world.getSkyAngle(deltaTime)*5f);
+			float satelliteAngle = (Objects.requireNonNull(mcc.world).getSkyAngle(deltaTime) *5f);
 			satelliteAngle %= 1f;
 			boolean canSee = satelliteAngle < 0.22249603 || satelliteAngle > 0.78432274;
 			int satX = (int)(128 + (96*Math.cos((satelliteAngle*6.3)-1.65)));
@@ -711,7 +703,7 @@ public class TabletOS {
 									for(OrderableItem i : shoppingCart) {
 										p.writeItemStack(new ItemStack(i));
 									}
-									ClientSidePacketRegistry.INSTANCE.sendToServer(PacketList.C2S_ORDER, p);
+									ClientPlayNetworking.send(PacketList.C2S_ORDER, p);
 									
 									tabletState = State.SHOP_OUTRO;
 									totalTimeRadar = 0;
@@ -746,19 +738,17 @@ public class TabletOS {
 		if(renderedImage != null) {renderedImage.close(); renderedImage = null;}
 		try {
 			renderedImage = NativeImage.read(byteArrayInputStream);
-			if(renderedImage != null) {
-				nibt = new NativeImageBackedTexture(renderedImage);
-				if(textureIdentifier != null) {
-					MinecraftClient.getInstance().getTextureManager().destroyTexture(textureIdentifier);
-				}
-				textureIdentifier = MinecraftClient.getInstance().getTextureManager().registerDynamicTexture("tablet_display", nibt);
+			nibt = new NativeImageBackedTexture(renderedImage);
+			if(textureIdentifier != null) {
+				MinecraftClient.getInstance().getTextureManager().destroyTexture(textureIdentifier);
 			}
+			textureIdentifier = MinecraftClient.getInstance().getTextureManager().registerDynamicTexture("tablet_display", nibt);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		byteArrayInputStream = null;
 	}
-	
+
 	public enum ShopState{
 		MENU, PC_PARTS, PERIPHERALS, SHOPPING_CART
 	}

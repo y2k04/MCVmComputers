@@ -9,6 +9,7 @@ public abstract class SetupPage {
 	protected final GuiSetup setupGui;
 	protected final TextRenderer textRender;
 	protected final MinecraftClient minecraft;
+	public final String virtualBoxDirectory = "";
 	
 	public SetupPage(GuiSetup setupGui, TextRenderer textRender) {
 		this.setupGui = setupGui;

@@ -25,7 +25,7 @@ public class SetupPageUnfocusBinding extends SetupPage{
 			bindingJustChanged = false;
 		}
 		String s = setupGui.translation("mcvmcomputers.setup.unfocusCombo");
-		this.textRender.draw(ms, s, setupGui.width/2-this.textRender.getWidth(s)/2, setupGui.height/2-20, -1);
+		this.textRender.draw(ms, s, setupGui.width / 2f - this.textRender.getWidth(s) / 2f, setupGui.height / 2f - 20, -1);
 	}
 	
 	private void changeBinding(int num) {
@@ -36,19 +36,11 @@ public class SetupPageUnfocusBinding extends SetupPage{
 	}
 	
 	private void clearBinding(int num) {
-		switch(num) {
-		case 1:
-			glfwUnfocusKey1 = -1;
-			break;
-		case 2:
-			glfwUnfocusKey2 = -1;
-			break;
-		case 3:
-			glfwUnfocusKey3 = -1;
-			break;
-		case 4:
-			glfwUnfocusKey4 = -1;
-			break;
+		switch (num) {
+			case 1 -> glfwUnfocusKey1 = -1;
+			case 2 -> glfwUnfocusKey2 = -1;
+			case 3 -> glfwUnfocusKey3 = -1;
+			case 4 -> glfwUnfocusKey4 = -1;
 		}
 		setupGui.init();
 	}

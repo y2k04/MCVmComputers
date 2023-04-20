@@ -2,6 +2,7 @@ package mcvmcomputers.client.gui;
 
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -19,7 +20,7 @@ public class GuiFocus extends Screen{
 	private String keyString;
 	private ArrayList<Integer> keys;
 	private final Language lang = Language.getInstance();
-	private MinecraftClient minecraft = MinecraftClient.getInstance();
+	private final MinecraftClient minecraft = MinecraftClient.getInstance();
 	
 	public GuiFocus() {
 		super(new TranslatableText("Focus"));
@@ -57,7 +58,7 @@ public class GuiFocus extends Screen{
 			public void run() {
 				long window = minecraft.getWindow().getHandle();
 				try {
-					String mcc = minecraft.getCurrentServerEntry().address;
+					String mcc = Objects.requireNonNull(minecraft.getCurrentServerEntry()).address;
 				} catch (NullPointerException address) {
 					GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
 					ServerAddress.cancel();

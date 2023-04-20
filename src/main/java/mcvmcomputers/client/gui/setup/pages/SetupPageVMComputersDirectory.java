@@ -22,14 +22,14 @@ public class SetupPageVMComputersDirectory extends SetupPage{
 
 	@Override
 	public void render(MatrixStack ms, int mouseX, int mouseY, float delta) {
-		this.textRender.draw(ms, setupGui.translation("mcvmcomputers.setup.vmcomputersdir"), setupGui.width/2-160, setupGui.height/2-20, -1);
-		this.textRender.draw(ms, vboxStatus, setupGui.width/2-160, setupGui.height/2+13, -1);
-		this.textRender.draw(ms, setupGui.translation("mcvmcomputers.setup.dontchange0"), setupGui.width/2-160, 60, -1);
-		this.textRender.draw(ms, setupGui.translation("mcvmcomputers.setup.dontchange1"), setupGui.width/2-160, 70, -1);
+		this.textRender.draw(ms, setupGui.translation("mcvmcomputers.setup.vmcomputersdir"), setupGui.width / 2f - 160, setupGui.height / 2f - 20, -1);
+		this.textRender.draw(ms, vboxStatus, setupGui.width / 2f - 160, setupGui.height / 2f + 13, -1);
+		this.textRender.draw(ms, setupGui.translation("mcvmcomputers.setup.dontchange0"), setupGui.width / 2f - 160, 60, -1);
+		this.textRender.draw(ms, setupGui.translation("mcvmcomputers.setup.dontchange1"), setupGui.width / 2f - 160, 70, -1);
 		this.vmComputersDirectory.render(ms, mouseX, mouseY, delta);
 	}
 	
-	private void next(ButtonWidget bw) {
+	private void next(ButtonWidget ignoredBw) {
 		if(checkDirectory(vmComputersDirectory.getText())) {
 			File parent = new File(vmComputersDirectory.getText());
 			ClientMod.isoDirectory = new File(parent, "isos");
@@ -42,9 +42,7 @@ public class SetupPageVMComputersDirectory extends SetupPage{
 			}
 			try {
 				ClientMod.getVHDNum();
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
+			} catch (NumberFormatException | IOException e) {
 				e.printStackTrace();
 			}
 			this.setupGui.nextPage();
@@ -76,7 +74,7 @@ public class SetupPageVMComputersDirectory extends SetupPage{
 	@Override
 	public void init() {
 		int nextButtonW = textRender.getWidth(setupGui.translation("mcvmcomputers.setup.nextButton"))+40;
-		next = new ButtonWidget(setupGui.width/2 - (nextButtonW/2), setupGui.height - 40, nextButtonW, 20, new LiteralText(setupGui.translation("mcvmcomputers.setup.nextButton")), (bw) -> this.next(bw));
+		next = new ButtonWidget(setupGui.width/2 - (nextButtonW/2), setupGui.height - 40, nextButtonW, 20, new LiteralText(setupGui.translation("mcvmcomputers.setup.nextButton")), this::next);
 		String dirText = ClientMod.vhdDirectory.getParentFile().getAbsolutePath();
 		if(vmComputersDirectory != null) {
 			dirText = vmComputersDirectory.getText();
@@ -85,8 +83,8 @@ public class SetupPageVMComputersDirectory extends SetupPage{
 		vmComputersDirectory = new TextFieldWidget(this.textRender, setupGui.width/2 - 160, setupGui.height/2 - 10, 320, 20, new LiteralText(""));
 		vmComputersDirectory.setMaxLength(35565);
 		vmComputersDirectory.setText(dirText);
-		vmComputersDirectory.setChangedListener((s) -> checkDirectory(s));
-		setupGui.addElement(vmComputersDirectory);
+		vmComputersDirectory.setChangedListener(this::checkDirectory);
+		setupGui.addDrawableChild(vmComputersDirectory);
 		setupGui.addButton(next);
 	}
 

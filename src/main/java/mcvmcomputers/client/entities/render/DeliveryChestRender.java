@@ -2,6 +2,8 @@ package mcvmcomputers.client.entities.render;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.TreeMap;
 
 import mcvmcomputers.client.ClientMod;
 import mcvmcomputers.client.entities.model.DeliveryChestModel;
@@ -9,6 +11,7 @@ import mcvmcomputers.entities.EntityDeliveryChest;
 import mcvmcomputers.sound.SoundList;
 import mcvmcomputers.utils.TabletOrder.OrderStatus;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -31,7 +34,7 @@ public class DeliveryChestRender extends EntityRenderer<EntityDeliveryChest>{
 	private DeliveryChestModel deliveryChestModel;
 	private final MinecraftClient mcc = MinecraftClient.getInstance();
 
-	protected DeliveryChestRender(EntityRendererFactory.Context ctx) {
+	public DeliveryChestRender(EntityRendererFactory.Context ctx) {
 		super(ctx);
 	}
 
@@ -43,7 +46,7 @@ public class DeliveryChestRender extends EntityRenderer<EntityDeliveryChest>{
 	private void checkModel() {
 		if(deliveryChestModel == null) {
 			try {
-				deliveryChestModel = new DeliveryChestModel();
+				deliveryChestModel = new DeliveryChestModel(new ModelPart(new ArrayList<>(), new TreeMap<>()));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -51,17 +54,16 @@ public class DeliveryChestRender extends EntityRenderer<EntityDeliveryChest>{
 	}
 	
 	private void applyRotations(EntityDeliveryChest entity) {
-		deliveryChestModel.setRotationAngle(deliveryChestModel.upleg0, 0, 0, entity.upLeg01Rot);
-		deliveryChestModel.setRotationAngle(deliveryChestModel.upleg1, 0, 0, entity.upLeg01Rot);
-		deliveryChestModel.setRotationAngle(deliveryChestModel.upleg2, 0, 0, entity.upLeg23Rot);
-		deliveryChestModel.setRotationAngle(deliveryChestModel.upleg3, 0, 0, entity.upLeg23Rot);
-		
-		deliveryChestModel.setRotationAngle(deliveryChestModel.uleg0, 0, 0, entity.uLeg01Rot);
-		deliveryChestModel.setRotationAngle(deliveryChestModel.uleg1, 0, 0, entity.uLeg01Rot);
-		deliveryChestModel.setRotationAngle(deliveryChestModel.uleg2, 0, 0, entity.uLeg23Rot);
-		deliveryChestModel.setRotationAngle(deliveryChestModel.uleg3, 0, 0, entity.uLeg23Rot);
-		
-		deliveryChestModel.setRotationAngle(deliveryChestModel.opening, entity.openingRot, 0, 0);
+		deliveryChestModel.model.children.get("upleg0").setAngles(0, 0, entity.upLeg01Rot);
+		deliveryChestModel.model.children.get("upleg1").setAngles(0, 0, entity.upLeg23Rot);
+		deliveryChestModel.model.children.get("upleg3").setAngles(0, 0, entity.upLeg23Rot);
+
+		deliveryChestModel.model.children.get("uleg0").setAngles(0, 0, entity.uLeg01Rot);
+		deliveryChestModel.model.children.get("uleg1").setAngles(0, 0, entity.uLeg01Rot);
+		deliveryChestModel.model.children.get("uleg2").setAngles(0, 0, entity.uLeg23Rot);
+		deliveryChestModel.model.children.get("uleg3").setAngles(0, 0, entity.uLeg23Rot);
+
+		deliveryChestModel.model.children.get("opening").setAngles(0, 0, entity.openingRot);
 		
 		deliveryChestModel.fireYes = entity.fire;
 	}
@@ -244,7 +246,7 @@ public class DeliveryChestRender extends EntityRenderer<EntityDeliveryChest>{
 							if(ClientMod.myOrder.currentStatus == OrderStatus.PAYMENT_CHEST_ARRIVED || ClientMod.myOrder.currentStatus == OrderStatus.PAYMENT_CHEST_RECEIVING) {
 								matrices.translate(0, -5, 0);
 								this.getTextRenderer().draw("Please insert", 6, 25, -1, false, matrices.peek().getModel(), vertexConsumers, false, new Color(0f,0f,0f,0f).getRGB(), light);
-								String s = ""+ClientMod.myOrder.price;
+								String s = String.valueOf(ClientMod.myOrder.price);
 								this.getTextRenderer().draw(s, (39) - this.getTextRenderer().getWidth(s) / 2f, 33, new Color(0.4f,0.4f,1f,1f).getRGB(), false, matrices.peek().getModel(), vertexConsumers, false, new Color(0f,0f,0f,0f).getRGB(), light);
 								this.getTextRenderer().draw("Iron Ingots", 10, 41, -1, false, matrices.peek().getModel(), vertexConsumers, false, new Color(0f,0f,0f,0f).getRGB(), light);
 								this.getTextRenderer().draw("by clicking", 13, 50, -1, false, matrices.peek().getModel(), vertexConsumers, false, new Color(0f,0f,0f,0f).getRGB(), light);

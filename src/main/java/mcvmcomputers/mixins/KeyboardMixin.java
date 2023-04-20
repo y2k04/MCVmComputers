@@ -28,19 +28,11 @@ public class KeyboardMixin {
 			 }else if(SetupPageUnfocusBinding.changeBinding) {
 				 if(i == GLFW.GLFW_PRESS) {
 					 if(getKeyName(key) != null) {
-						 switch(SetupPageUnfocusBinding.bindingToBeChangedNum) {
-							case 1:
-								glfwUnfocusKey1 = key;
-								break;
-							case 2:
-								glfwUnfocusKey2 = key;
-								break;
-							case 3:
-								glfwUnfocusKey3 = key;
-								break;
-							case 4:
-								glfwUnfocusKey4 = key;
-								break;
+						 switch (SetupPageUnfocusBinding.bindingToBeChangedNum) {
+							 case 1 -> glfwUnfocusKey1 = key;
+							 case 2 -> glfwUnfocusKey2 = key;
+							 case 3 -> glfwUnfocusKey3 = key;
+							 case 4 -> glfwUnfocusKey4 = key;
 						 }
 						 SetupPageUnfocusBinding.bindingJustChanged = true;
 						 SetupPageUnfocusBinding.changeBinding = false;

@@ -1,5 +1,6 @@
 package mcvmcomputers.mixins;
 
+import net.minecraft.util.math.Vec3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,7 +16,6 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.item.HeldItemRenderer;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Arm;
 import net.minecraft.util.Hand;
@@ -55,7 +55,7 @@ public class HeldItemMixin {
 					matrices.push();
 						boolean b = hand == Hand.MAIN_HAND;
 						Arm arm = b ? Arm.RIGHT : Arm.LEFT;
-						matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(90.0F));
+						matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90.0F));
 						matrices.translate(1.03, 0.20, 0);
 						this.renderArm(matrices, vertexConsumers, light, arm);
 					matrices.pop();

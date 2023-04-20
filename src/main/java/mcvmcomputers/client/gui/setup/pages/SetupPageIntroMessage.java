@@ -21,7 +21,7 @@ public class SetupPageIntroMessage extends SetupPage{
 			int offY = -36;
 			
 			for(String s : text.split("\n")) {
-				this.textRender.draw(ms, s, setupGui.width/2 - this.textRender.getWidth(s)/2, setupGui.height/2 + offY, -1);
+				this.textRender.draw(ms, s, setupGui.width / 2f - this.textRender.getWidth(s) / 2f, setupGui.height / 2f + offY, -1);
 				offY+=10;
 			}
 		}
@@ -35,9 +35,7 @@ public class SetupPageIntroMessage extends SetupPage{
 		}else {
 			int useConfigW = textRender.getWidth(setupGui.translation("mcvmcomputers.setup.useConfig"))+20;
 			int redoSetupW = textRender.getWidth(setupGui.translation("mcvmcomputers.setup.redoSetup"))+20;
-			int w = useConfigW;
-			if(redoSetupW > useConfigW)
-				w = redoSetupW;
+			int w = Math.max(redoSetupW, useConfigW);
 			setupGui.addButton(new ButtonWidget(setupGui.width/2 - (w/2), setupGui.height / 2 - 25, w, 20, new LiteralText(setupGui.translation("mcvmcomputers.setup.useConfig")), (bw) -> this.setupGui.lastPage()));
 			setupGui.addButton(new ButtonWidget(setupGui.width/2 - (w/2), setupGui.height / 2 + 5, w, 20, new LiteralText(setupGui.translation("mcvmcomputers.setup.redoSetup")), (bw) -> this.delete()));
 		}

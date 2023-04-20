@@ -6,8 +6,8 @@ import java.io.IOException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.virtualbox_6_1.IVirtualBox;
-import org.virtualbox_6_1.VirtualBoxManager;
+import org.virtualbox_7_0.IVirtualBox;
+import org.virtualbox_7_0.VirtualBoxManager;
 
 import com.google.gson.Gson;
 
@@ -118,11 +118,7 @@ public class SetupPageMaxValues extends SetupPage{
 			}
 		}
 		
-		Runnable runnable = new Runnable() {
-		    public void run() {
-		    	ClientMod.vboxWebSrv.destroy();
-		    }
-		};
+		Runnable runnable = () -> ClientMod.vboxWebSrv.destroy();
 		Runtime.getRuntime().addShutdownHook(new Thread(runnable));
 		boolean[] bools = new boolean[] {checkMaxRam(maxRam.getText()), videoMemory(videoMemory.getText())};
 		for(boolean b : bools) {
@@ -131,61 +127,56 @@ public class SetupPageMaxValues extends SetupPage{
 			}
 		}
 		this.setupGui.clearElements();
-		this.setupGui.clearButtons();
 		onlyStatusMessage = true;
 		ClientMod.maxRam = Integer.parseInt(maxRam.getText());
 		ClientMod.videoMem = Integer.parseInt(videoMemory.getText());
 		status = setupGui.translation("mcvmcomputers.setup.startingStatus");
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					VirtualBoxManager vm = VirtualBoxManager.createInstance(null);
-					vm.connect("http://localhost:18083", "should", "work");
-					IVirtualBox vb = vm.getVBox();
-					VMSettings set = new VMSettings();
-					set.vboxDirectory = setupGui.virtualBoxDirectory;
-					set.vmComputersDirectory = ClientMod.vhdDirectory.getParentFile().getAbsolutePath();
-					set.unfocusKey1 = ClientMod.glfwUnfocusKey1;
-					set.unfocusKey2 = ClientMod.glfwUnfocusKey2;
-					set.unfocusKey3 = ClientMod.glfwUnfocusKey3;
-					set.unfocusKey4 = ClientMod.glfwUnfocusKey4;
-					set.maxRam = ClientMod.maxRam;
-					set.videoMem = ClientMod.videoMem;
-					File f = new File(minecraft.runDirectory, "vm_computers/setup.json");
-					if(f.exists()) {
-						f.delete();
-					}
-					f.createNewFile();
-					FileWriter fw = new FileWriter(f);
-					fw.append(new Gson().toJson(set));
-					fw.flush();
-					fw.close();
-					for(int i = 5;i>=0;i--) {
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-						status = setupGui.translation("mcvmcomputers.setup.successStatus").replaceFirst("%s", vb.getVersion()).replaceFirst("%s", ""+i);
-					}
-					ClientMod.vbManager = vm;
-					ClientMod.vb = vb;
-					minecraft.openScreen(new TitleScreen());
-					return;
-				}catch(Exception ex) {
-					ex.printStackTrace();
-					for(int i = 5;i>=0;i--) {
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-						status = setupGui.translation("mcvmcomputers.setup.failedStatus").replace("%s", ""+i);
-					}
-					onlyStatusMessage = false;
-					setupGui.firstPage();
+		new Thread(() -> {
+			try {
+				VirtualBoxManager vm = VirtualBoxManager.createInstance(null);
+				vm.connect("http://localhost:18083", "should", "work");
+				IVirtualBox vb = vm.getVBox();
+				VMSettings set = new VMSettings();
+				set.vboxDirectory = setupGui.virtualBoxDirectory;
+				set.vmComputersDirectory = ClientMod.vhdDirectory.getParentFile().getAbsolutePath();
+				set.unfocusKey1 = ClientMod.glfwUnfocusKey1;
+				set.unfocusKey2 = ClientMod.glfwUnfocusKey2;
+				set.unfocusKey3 = ClientMod.glfwUnfocusKey3;
+				set.unfocusKey4 = ClientMod.glfwUnfocusKey4;
+				set.maxRam = ClientMod.maxRam;
+				set.videoMem = ClientMod.videoMem;
+				File f = new File(minecraft.runDirectory, "vm_computers/setup.json");
+				if(f.exists()) {
+					f.delete();
 				}
+				f.createNewFile();
+				FileWriter fw = new FileWriter(f);
+				fw.append(new Gson().toJson(set));
+				fw.flush();
+				fw.close();
+				for(int i = 5;i>=0;i--) {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					status = setupGui.translation("mcvmcomputers.setup.successStatus").replaceFirst("%s", vb.getVersion()).replaceFirst("%s", String.valueOf(i));
+				}
+				ClientMod.vbManager = vm;
+				ClientMod.vb = vb;
+				minecraft.openScreen(new TitleScreen());
+			}catch(Exception ex) {
+				ex.printStackTrace();
+				for(int i = 5;i>=0;i--) {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					status = setupGui.translation("mcvmcomputers.setup.failedStatus").replace("%s", String.valueOf(i));
+				}
+				onlyStatusMessage = false;
+				setupGui.firstPage();
 			}
 		}).start();
 	}
@@ -193,18 +184,18 @@ public class SetupPageMaxValues extends SetupPage{
 	@Override
 	public void render(MatrixStack ms, int mouseX, int mouseY, float delta) {
 		if(!onlyStatusMessage) {
-			this.textRender.draw(ms, setupGui.translation("mcvmcomputers.setup.max_ram_input"), setupGui.width/2 - 160, setupGui.height/2-30, -1);
-			this.textRender.draw(ms, setupGui.translation("mcvmcomputers.setup.vram_input"), setupGui.width/2 + 10, setupGui.height/2-30, -1);
+			this.textRender.draw(ms, setupGui.translation("mcvmcomputers.setup.max_ram_input"), setupGui.width/2f - 160, setupGui.height / 2f - 30, -1);
+			this.textRender.draw(ms, setupGui.translation("mcvmcomputers.setup.vram_input"), setupGui.width / 2f + 10, setupGui.height / 2f - 30, -1);
 			String s = setupGui.translation("mcvmcomputers.setup.ram_input_help");
-			this.textRender.draw(ms, s, setupGui.width/2 - textRender.getWidth(s)/2, setupGui.height/2+30, -1);
-			this.textRender.draw(ms, statusMaxRam, setupGui.width / 2 - 160, setupGui.height/2 + 3, -1);
-			this.textRender.draw(ms, statusVideoMemory, setupGui.width / 2 + 10, setupGui.height/2 + 3, -1);
+			this.textRender.draw(ms, s, setupGui.width / 2f - textRender.getWidth(s) / 2f, setupGui.height / 2f + 30, -1);
+			this.textRender.draw(ms, statusMaxRam, setupGui.width / 2f - 160, setupGui.height / 2f + 3, -1);
+			this.textRender.draw(ms, statusVideoMemory, setupGui.width / 2f + 10, setupGui.height / 2f + 3, -1);
 			this.maxRam.render(ms, mouseX, mouseY, delta);
 			this.videoMemory.render(ms, mouseX, mouseY, delta);
 		}else {
 			int yOff = -((this.textRender.fontHeight * status.split("\n").length)/2);
 			for(String s : status.split("\n")) {
-				this.textRender.draw(ms, s, setupGui.width/2 - this.textRender.getWidth(s)/2, (setupGui.height/2-this.textRender.fontHeight/2)+yOff, -1);
+				this.textRender.draw(ms, s, setupGui.width / 2f - this.textRender.getWidth(s) / 2f, (setupGui.height / 2f - this.textRender.fontHeight / 2f) + yOff, -1);
 				yOff+=this.textRender.fontHeight+1;
 			}
 		}
@@ -212,27 +203,27 @@ public class SetupPageMaxValues extends SetupPage{
 
 	@Override
 	public void init() {
-		String maxRamText = ""+ClientMod.maxRam;
+		String maxRamText = String.valueOf(ClientMod.maxRam);
 		if(maxRam != null) {
 			maxRamText = maxRam.getText();
 		}
-		String videoMemoryText = ""+ClientMod.videoMem;
+		String videoMemoryText = String.valueOf(ClientMod.videoMem);
 		if(videoMemory != null) {
 			videoMemoryText = videoMemory.getText();
 		}
 		if(!onlyStatusMessage) {
 			maxRam = new TextFieldWidget(this.textRender, setupGui.width/2-160, setupGui.height/2-20, 150, 20, new LiteralText(""));
 			maxRam.setText(maxRamText);
-			maxRam.setChangedListener((str) -> checkMaxRam(str));
+			maxRam.setChangedListener(this::checkMaxRam);
 			videoMemory = new TextFieldWidget(this.textRender, setupGui.width/2+10, setupGui.height/2-20, 150, 20, new LiteralText(""));
 			videoMemory.setText(videoMemoryText);
-			videoMemory.setChangedListener((str) -> videoMemory(str));
+			videoMemory.setChangedListener(this::videoMemory);
 			checkMaxRam(maxRam.getText());
 			videoMemory(videoMemory.getText());
-			setupGui.addElement(maxRam);
-			setupGui.addElement(videoMemory);
+			setupGui.addDrawableChild(maxRam);
+			setupGui.addDrawableChild(videoMemory);
 			int confirmW = textRender.getWidth(setupGui.translation("mcvmcomputers.setup.confirmButton"))+40;
-			setupGui.addButton(new ButtonWidget(setupGui.width/2 - (confirmW/2), setupGui.height - 40, confirmW, 20, new LiteralText(setupGui.translation("mcvmcomputers.setup.confirmButton")), (btn) -> confirmButton(btn)));
+			setupGui.addButton(new ButtonWidget(setupGui.width/2 - (confirmW/2), setupGui.height - 40, confirmW, 20, new LiteralText(setupGui.translation("mcvmcomputers.setup.confirmButton")), this::confirmButton));
 			
 			if(setupGui.startVb) {
 				confirmButton(null);
